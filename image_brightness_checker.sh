@@ -31,7 +31,8 @@ while read -r line; do
         printf "%s,%s,%s\n" "${line}" "${brightcolor}" "${NUMBER}" >> ~/imagebright.csv
         # adding for thumbnails for example 
         # this will eventually be the first thumbnailing and range run
-        timeout 5 convert -resize 50x50! "${line}" /home/steven/test/"${NUMBER}".jpg
+        outfile=$(printf "/home/steven/test/%06d.jpg" "${NUMBER}")
+        timeout 5 convert -resize 50x50! "${line}" "${outfile}"
         IFS=OIFS
     fi
 done < <(echo "${imgfiles}")
