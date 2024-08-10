@@ -11,20 +11,12 @@
 ########################################################################
 # Definitions
 ########################################################################
-# Setting them here, will create if needed later
-ConfigDir=${XDG_CONFIG_HOME:-$HOME/.config}/mpdq
-StateDir=${XDG_STATE_HOME:-$HOME/.local/state}/mpdq
-CacheDir=${XDG_CACHE_HOME:-$HOME/.local/state}/mpdq
-# Defining some things. This is NOT the instruction file.
-ConfigFile=${ConfigDir}/mpdq.ini
-# This is used to communicate with running background program, including killing and instruction file changes
-RelayName=${StateDir}/mpdq_cmd
-# This file will contain time song was played, its filename, the album, and artist
-ConfigLogFile=${StateDir}/playedsongs.log
-ConfigLogFile2=${StateDir}/playedsongs2.log
 
-# Global variables 
-# Global variables 
+ConfigDir=${XDG_CONFIG_HOME:-$HOME/.config}/daywall
+ConfigFile=${ConfigDir}/daywall.ini
+LowValue=""
+HighValue=""
+ImageDir=""
 export SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 
 ########################################################################
@@ -37,6 +29,13 @@ function loud() {
     fi
 }
 
+# function to read INI
+# should just have the image dir to scan
+# and then have a LOW and HIGH value
+
+# function to scan image dir
+    # find LOW and HIGH
+    # write list of images to scan from later
 
 function time_of_day() {
     
@@ -56,32 +55,24 @@ function time_of_day() {
     
     # where is current hour in comparison to midnight and midday
     currhour=$(date "+%-H")
-    echo $currhour
+
     
     # 0 - 60,000 (or so) is about 5,000 an hour
     # which perceptually is a bit much, so maybe 4k for midnight to + 6
     # then 6k for the 6 hrs to noon, then back down
-    # get our brightness range of our photos (rebuild or from config/ini/whatever)
-    # they're a string from ... no wait, that won't work. We'll have to define 
-    # what range constitutes 
-    # dark
-    # twilight
-    # bright
-    
-    
-    # hdate -s -l N50 -L E14 -z2
-
-#Output:
-
-#Wednesday, 26 June 2019, 23 Sivan 5779
-#sunrise: 04:55
-#sunset: 21:17
-
-#Options:
-
-#    -s sunset sunrise
-#    -l, -L: Altitude and Latitude of Prague (50°05′N 14°25′E)
-#    -z zone: SELC=+2
+    if [ $currhour -le
+0: 4000
+1: 8000
+2: 12000
+3: 16000
+4: 20000
+5: 24000
+6: 30000
+7: 36000
+8: 42000
+9: 48000
+10: 54000
+11: 65000
 
 }
 

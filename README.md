@@ -23,6 +23,9 @@ This project is licensed under the MIT License. For the full license, see `LICEN
 ## 3. Prerequisites
 
 hdate `sudo apt install hdate`
+imagemagick
+curl
+timeout
 
 ## 4. Installation
 
