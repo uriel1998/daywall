@@ -26,6 +26,11 @@ hdate `sudo apt install hdate`
 imagemagick
 curl
 timeout
+fdfind (or fd-find)
+shuf
+tail
+awk
+realpath
 
 ## 4. Installation
 
