@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
  ########################################################################
  # 
@@ -15,50 +15,9 @@
 ConfigDir=${XDG_CONFIG_HOME:-$HOME/.config}
 ConfigFile=${ConfigDir}/daywall.ini
 CacheDir=${XDG_CACHE_HOME:-$HOME/.local/state}
-CacheFile=${ConfigDir}/daywall.cache
+CacheFile=${CacheDir}/daywall.cache
 ImageDir=""
-export SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
-
-########################################################################
-# Set up config, get image directory to scan
-########################################################################
-
-if [ ! -d "${ConfigDir}" ];then
-    mkdir -p "${ConfigDir}"
-fi
-if [ ! -d "${CacheDir}" ];then
-    mkdir -p "${CacheDir}"
-fi
-
-if [ ! -f "${CacheFile}" ];then
-    touch "${CacheFile}"
-fi
-
-if [ -f "${ConfigFile}" ];then
-    ImageDir=$(realpath $(grep "DIR" "${ConfigFile}" | awk -F '=' '{print $2}'))
-else
-    touch "${ConfigFile}"
-    # If the config file is empty, then a directory to scan MUST be presented.
-    if [ ! -d "{$1}" ];then
-        echo "Configuration file was not present (now created); no directory to scan"
-        echo "presented on command line. Exiting."
-        exit 99
-    fi
-fi
-# REPLACE ImageDir if specified on command line
-
-if [ -d "${1}" ];then
-    ImageDir="${1}"
-    loud "Adding ${ImageDir}"
-fi
-
-
-if [ ! -d "${ImageDir}" ];then
-    echo "ERROR: Image Directory To Scan Is Not Present."
-    exit 98
-fi
-
-
+ r
 ########################################################################
 # Functions
 ########################################################################
@@ -92,6 +51,9 @@ function scan_directory() {
             filename=$(basename "${line}")
             exist=$(grep -c "${filename}" "${CacheFile}")
             # we aren't rescanning things we already have, thanks
+            
+            # TODO: This is not working properly, lol
+            
             if [ $exist -eq 0 ];then
                 OIFS=$IFS
                 IFS=$'\n'; set -f
@@ -113,7 +75,7 @@ function scan_directory() {
 function clean_cache() {
     # TODO: basically go through ${CacheFile} line by line, and omit the lines
     # with files that no longer exist
-    
+    echo "nope"
 }
 
 
@@ -190,12 +152,52 @@ function time_of_day() {
     # Use awk to parse our filelist to find something in the appropriate range
     outfile=""
     while : ; do
-        outfile=$(awk -F ',' -v highval="$highval" -v lowval="$lowval" 'BEGIN $3 <= highval && $3 >= lowval {print $1}' "${CacheFile}" | shuf | tail -1)
+        outfile=$(awk -F ',' -v highval="$highval" -v lowval="$lowval" '$3 <= highval && $3 >= lowval {print $1}' "${CacheFile}" | shuf | tail -1)
         # check for its existence
         [[ -f "${outfile}" ]] || break
     done
     echo "${outfile}"
 }
+
+########################################################################
+# Set up config, get image directory to scan
+########################################################################
+
+if [ ! -d "${ConfigDir}" ];then
+    mkdir -p "${ConfigDir}"
+fi
+if [ ! -d "${CacheDir}" ];then
+    mkdir -p "${CacheDir}"
+fi
+
+if [ ! -f "${CacheFile}" ];then
+    touch "${CacheFile}"
+fi
+
+if [ -f "${ConfigFile}" ];then
+    # TODO: test for when if not dir present in configfile here
+    ImageDir=$(realpath $(grep "DIR" "${ConfigFile}" | awk -F '=' '{print $2}'))
+else
+    touch "${ConfigFile}"
+    # If the config file is empty, then a directory to scan MUST be presented.
+    if [ ! -d "{$1}" ];then
+        echo "Configuration file was not present (now created); no directory to scan"
+        echo "presented on command line. Exiting."
+        exit 99
+    fi
+fi
+# REPLACE ImageDir if specified on command line
+
+if [ -d "${1}" ];then
+    ImageDir="${1}"
+    echo "Adding ${ImageDir}"
+fi
+
+
+if [ ! -d "${ImageDir}" ];then
+    echo "ERROR: Image Directory To Scan Is Not Present."
+    exit 98
+fi
 
 
 scan_directory

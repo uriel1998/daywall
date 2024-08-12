@@ -25,14 +25,16 @@ while read -r line; do
         # rounding the number, crudely.
         NUMBER=$(echo $brightcolor | awk '{ print $0 + .90 }')
         NUMBER=$(printf "%0.f" $NUMBER)
-        ImageFile+=("${line}")
-        ImageBright+=("${NUMBER}")
-        printf "%s\t%s\t%s\n" "${filename}" "${brightcolor}" "${NUMBER}"
-        printf "%s,%s,%s\n" "${line}" "${brightcolor}" "${NUMBER}" >> ~/imagebright.csv
-        # adding for thumbnails for example 
-        # this will eventually be the first thumbnailing and range run
-        outfile=$(printf "/home/steven/test/%06d.jpg" "${NUMBER}")
-        timeout 5 convert -resize 50x50! "${line}" "${outfile}"
+        if [ $NUMBER -gt 2 ];then
+            ImageFile+=("${line}")
+            ImageBright+=("${NUMBER}")
+            printf "%s\t%s\t%s\n" "${filename}" "${brightcolor}" "${NUMBER}"
+            printf "%s,%s,%s\n" "${line}" "${brightcolor}" "${NUMBER}" >> ~/imagebright.csv
+            # adding for thumbnails for example 
+            # this will eventually be the first thumbnailing and range run
+            outfile=$(printf "/home/steven/test/%06d.jpg" "${NUMBER}")
+            timeout 5 convert -resize 50x50! "${line}" "${outfile}"
+        fi
         IFS=OIFS
     fi
 done < <(echo "${imgfiles}")
