@@ -198,8 +198,8 @@ function time_of_day() {
 }
 
 
+scan_directory
 
 
-export DISPLAY=:0.0;feh --bg-scale $file
-echo "The randomly-selected file is: $file"
-exit
+echo "The randomly-selected file is: $(time_of_day)"
+
