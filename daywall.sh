@@ -51,9 +51,6 @@ function scan_directory() {
             filename=$(basename "${line}")
             exist=$(grep -c "${filename}" "${CacheFile}")
             # we aren't rescanning things we already have, thanks
-            
-            # TODO: This is not working properly, lol
-            
             if [ $exist -eq 0 ];then
                 OIFS=$IFS
                 IFS=$'\n'; set -f
@@ -89,7 +86,7 @@ function time_of_day() {
     lat=$(echo "${coords}" | awk -F ', ' '{ print $1 }')
     long=$(echo "${coords}" | awk -F ', ' '{ print $2 }')    
     sunrise=$(hdate -s -l "$lat" -L "$long" 2>/dev/null | grep "sunrise" | awk '{ print $2 }' | awk -F ':' '{ print $1 }')
-    sunset=$(hdate -s -l "$lat" -L "$long" 2>/dev/null | grep "sunrise" | awk '{ print $2 }' | awk -F ':' '{ print $1 }')
+    sunset=$(hdate -s -l "$lat" -L "$long" 2>/dev/null | grep "sunset" | awk '{ print $2 }' | awk -F ':' '{ print $1 }')
     
     # doing all the math with bc to be consistent here
     midday=$(echo "($sunset-$sunrise)/2+$sunrise" | bc)
@@ -100,9 +97,9 @@ function time_of_day() {
     
     # where is current hour in comparison to midday
     currhour=$(date "+%-H")
+    echo "${lat} ${long} ${sunset} ${sunrise} ${midday}"
     time_diff=$(expr $(date +%Y%m%d)${currhour} - $(date +%Y%m%d)${midday})
     abs_time_diff=${time_diff#-}
-    
     # map the high and low value for the image for the appropriate time
     case "${abs_time_diff}" in
         0)  highval=65000    
@@ -148,11 +145,14 @@ function time_of_day() {
             lowval=200
             ;;
     esac
-    
     # Use awk to parse our filelist to find something in the appropriate range
     outfile=""
     while : ; do
         outfile=$(awk -F ',' -v highval="$highval" -v lowval="$lowval" '$3 <= highval && $3 >= lowval {print $1}' "${CacheFile}" | shuf | tail -1)
+        echo "${outfile}"
+        if [ -f "${outfile}" ]; then
+            break
+        fi
         # check for its existence
         [[ -f "${outfile}" ]] || break
     done
@@ -201,7 +201,8 @@ fi
 
 
 scan_directory
-
+ 
+time_of_day
 
 echo "The randomly-selected file is: $(time_of_day)"
 
