@@ -17,7 +17,23 @@ ConfigFile=${ConfigDir}/daywall.ini
 CacheDir=${XDG_CACHE_HOME:-$HOME/.local/state}
 CacheFile=${CacheDir}/daywall.cache
 ImageDir=""
+LOUD=0
  
+ 
+if [[ "$@" == *"--help"* ]]; then
+    echo "daywall.sh"
+    echo "usage:  daywall.sh [directory] [OPTIONS]"
+    echo " "
+    echo "directory is optional if configuration file has the directory specified."
+    echo "OPTIONS (must come after directory, if specified):"
+    echo "--help: This."
+    echo "--loud: extra output."
+    exit 0
+fi 
+ 
+if [[ "$@" == *"--loud"* ]]; then
+    LOUD=1
+fi
 ########################################################################
 # Functions
 ########################################################################
@@ -28,9 +44,6 @@ function loud() {
     fi
 }
 
-# help
-# $1 - if directory, add it to cache and selectable images
-# 
 
 # function to scan image dir
     # scan the directory in the ini file; if filename is not in our cache, analyze it and add
@@ -54,15 +67,17 @@ function scan_directory() {
             if [ $exist -eq 0 ];then
                 OIFS=$IFS
                 IFS=$'\n'; set -f
+                loud "Analyzing ${filename}"
                 brightcolor=$(timeout 5 convert "${line}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
                 # rounding the number, crudely.
                 NUMBER=$(echo $brightcolor | awk '{ print $0 + .90 }')
                 NUMBER=$(printf "%0.f" $NUMBER)
-                printf "%s,%s,%s\n" "${line}" "${brightcolor}" "${NUMBER}" >> "${CacheFile}"
-                # adding for thumbnails for example 
-                # this will eventually be the first thumbnailing and range run
-                outfile=$(printf "/home/steven/test/%06d.jpg" "${NUMBER}")
-                timeout 5 convert -resize 50x50! "${line}" "${outfile}"
+                if [ $NUMBER -gt 100 ];then
+                    printf "%s,%s,%s\n" "${line}" "${brightcolor}" "${NUMBER}" >> "${CacheFile}"
+                else
+                    loud "## Probable error processing brightness of ${line}"
+                    printf "%s,%s,%s\n" "${line}" "${brightcolor}" "${NUMBER}" >> "${CacheFile}"
+                fi
                 IFS=OIFS
             fi
         fi
@@ -145,6 +160,8 @@ function time_of_day() {
             ;;
     esac
     # Use awk to parse our filelist to find something in the appropriate range
+    # TODO: Need failure catching here as well, if a range isn't found, just pick one 
+    # after so many attempts
     outfile=""
     while : ; do
         outfile=$(awk -F ',' -v highval="$highval" -v lowval="$lowval" '$3 <= highval && $3 >= lowval {print $1}' "${CacheFile}" | shuf | tail -1)
@@ -173,8 +190,10 @@ if [ ! -f "${CacheFile}" ];then
 fi
 
 if [ -f "${ConfigFile}" ];then
-    # TODO: test for when if not dir present in configfile here
-    ImageDir=$(realpath $(grep "DIR" "${ConfigFile}" | awk -F '=' '{print $2}'))
+    test=$(grep -c "DIR" "${ConfigFile}")
+    if [ $test -gt 0 ];then
+        ImageDir=$(realpath $(grep "DIR" "${ConfigFile}" | awk -F '=' '{print $2}'))
+    fi
 else
     touch "${ConfigFile}"
     # If the config file is empty, then a directory to scan MUST be presented.
@@ -184,11 +203,11 @@ else
         exit 99
     fi
 fi
-# REPLACE ImageDir if specified on command line
 
+# REPLACE ImageDir if specified on command line
 if [ -d "${1}" ];then
     ImageDir="${1}"
-    echo "Adding ${ImageDir}"
+    loud "Adding ${ImageDir}"
 fi
 
 
@@ -197,10 +216,11 @@ if [ ! -d "${ImageDir}" ];then
     exit 98
 fi
 
+#TODO - have adding a directory add it to the ini file
+#TODO - read multiple directories from the ini file
 
 scan_directory
- 
-time_of_day
 
-echo "The randomly-selected file is: $(time_of_day)"
+loud "The randomly-selected file is: "
+echo "$(time_of_day)"
 
