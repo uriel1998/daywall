@@ -17,7 +17,7 @@ ConfigFile=${ConfigDir}/daywall.ini
 CacheDir=${XDG_CACHE_HOME:-$HOME/.local/state}
 CacheFile=${CacheDir}/daywall.cache
 ImageDir=""
- r
+ 
 ########################################################################
 # Functions
 ########################################################################
@@ -97,7 +97,6 @@ function time_of_day() {
     
     # where is current hour in comparison to midday
     currhour=$(date "+%-H")
-    echo "${lat} ${long} ${sunset} ${sunrise} ${midday}"
     time_diff=$(expr $(date +%Y%m%d)${currhour} - $(date +%Y%m%d)${midday})
     abs_time_diff=${time_diff#-}
     # map the high and low value for the image for the appropriate time
@@ -149,7 +148,6 @@ function time_of_day() {
     outfile=""
     while : ; do
         outfile=$(awk -F ',' -v highval="$highval" -v lowval="$lowval" '$3 <= highval && $3 >= lowval {print $1}' "${CacheFile}" | shuf | tail -1)
-        echo "${outfile}"
         if [ -f "${outfile}" ]; then
             break
         fi
