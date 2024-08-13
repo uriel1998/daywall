@@ -34,7 +34,7 @@ This project is licensed under the MIT License. For the full license, see `LICEN
 * hdate
 * imagemagick
 * curl
-* fdfind (or fd-find)
+* fdfind (or fd-find) -- optional, uses `find` if `fd-find` is not present
 * gawk
 * shuf
 * timeout
@@ -95,6 +95,9 @@ and the image files *currently* in that directory will be added. These additiona
 directories will *not* be re-scanned for new images unless the directory is specified 
 at run-time.
 
+If an image is not found within the appropriate range, `daywall` will increase the 
+allowable brightness range automatically.
+
 ## 7. Tweaking
 
 If there is any error with analyzing the brightness, it will be recorded as "1". 
@@ -131,4 +134,3 @@ number, like so:
  
 * Add additional "watch" directories to INI file
 * Random error checking
-* write variant using find instead of fdfind

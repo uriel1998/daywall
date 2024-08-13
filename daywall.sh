@@ -54,9 +54,11 @@ function scan_directory() {
     # it doesn't matter.
     cd "${ImageDir}"
     
-    # TODO:  Rewrite for regular "find" if fdfind isn't present
-    imgfiles=$(fdfind --exclude '*tile*' -a -0 -e jpg -e jpeg -e png | xargs --null -I {} realpath {} )
-
+    if [ -f $(which fdfind) ];then 
+        imgfiles=$(fdfind -a -0 -e jpg -e jpeg -e png | xargs --null -I {} realpath {} )
+    else
+        imgfiles=$(find . -iname "*.jpg" -or -iname "*.png" -or -iname "*.jpeg" | xargs -I {} realpath {} )
+    fi
     while read -r line; do
         exist=0
         if [ -f "${line}" ];then 
@@ -184,8 +186,6 @@ function time_of_day() {
             ;;
     esac
     # Use awk to parse our filelist to find something in the appropriate range
-    # TODO: Need failure catching here as well, if a range isn't found, just pick one 
-    # after so many attempts
     outfile=""
     while : ; do
         outfile=$(awk -F ',' -v highval="$highval" -v lowval="$lowval" '$3 <= highval && $3 >= lowval {print $1}' "${CacheFile}" | shuf | tail -1)
@@ -194,6 +194,17 @@ function time_of_day() {
         fi
         # check for its existence
         [[ -f "${outfile}" ]] || break
+        # if nothing was found, expand lowval and highval before trying again.
+        # that way we'll eventually catch something.
+        lowval=$((lowval-100))
+        highval=$((highval+100))
+        # ensure we haven't exceeded our maximum and minimum possible values
+        if [ $lowval -le 100 ];then
+            lowval=100
+        fi
+        if [ $highval -ge 66500 ];then
+            highval=66500
+        fi
     done
     echo "${outfile}"
 }
