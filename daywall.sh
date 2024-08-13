@@ -188,8 +188,6 @@ function time_of_day() {
             lowval=200
             ;;
     esac
-    echo "${abs_time_diff};$highval;$lowval;$(date +%Y%m%d)${currhour} ; $(date +%Y%m%d)${midday};$(expr $(date +%Y%m%d)${currhour} - $(date +%Y%m%d)${midday})" >> ~/debugging.txt
-
     # Use awk to parse our filelist to find something in the appropriate range
     outfile=""
     while : ; do
