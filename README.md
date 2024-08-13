@@ -9,7 +9,8 @@
  4. [Installation](#4-installation)
  5. [Setup](#5-setup)
  6. [Usage](#6-usage)
- 7. [TODO](#7-todo)
+ 7. [Tweaking](#7-tweaking) 
+ 8. [TODO](#8-todo)
 
 ***
 
@@ -30,19 +31,21 @@ This project is licensed under the MIT License. For the full license, see `LICEN
 
 ## 3. Prerequisites
 
-hdate `sudo apt install hdate`
-imagemagick
-curl
-timeout
-fdfind (or fd-find)
-shuf
-tail
-awk
-realpath
+* hdate
+* imagemagick
+* curl
+* fdfind (or fd-find)
+* gawk
+* shuf
+* timeout
+* realpath
+* tail
 
 ## 4. Installation
 
+On Debian-like (including Ubuntu):
 
+`sudo apt install coreutils hdate fd-find curl gawk imagemagick`
 
 ## 5. Setup
 
@@ -51,13 +54,15 @@ In `$HOME/.config/daywall.ini` place the topmost directory that contains your
 
 `DIR=/PATH/TO/IMAGES`
 
+While not strictly *required*, `daywall` will squawk if you forget to specify a 
+directory to scan on the command line if this is not set.
+
 If you wish to set your coordinates as an environment variable and not use the 
 online lookup, do so like this:
 
 `export COORDS="22.73, -81.08`
 
-That's latitude and longitude, note the comma and space between them; that is 
-*required*.
+That's latitude first, then longitude. The comma and space between them is *required*.
 
 ## 6. Usage
 
@@ -90,9 +95,40 @@ and the image files *currently* in that directory will be added. These additiona
 directories will *not* be re-scanned for new images unless the directory is specified 
 at run-time.
 
-## 7. TODO
+## 7. Tweaking
+
+If there is any error with analyzing the brightness, it will be recorded as "1". 
+The filename will still be stored in the cache file (so you can debug), but will 
+not be used by `daywall`.  
+
+The values in the cache file can be manually adjusted if needed.
+
+If you want to change the brightness values and their time of day, look for this
+section of the code:
+```
+    # THESE ARE THE BRIGHTNESS VALUES TO EDIT
+    # 0 is MID-DAY
+    case "${abs_time_diff}" in
+        0)  highval=65000    
+            lowval=54000
+            ;;
+```
+
+`highval` in each set is the highest allowed brightness value, `lowval` is the lowest. 
+The hour number is how far away the time is from the midpoint between sunrise and 
+sunset (literally "mid-day").  So, for example, if you wanted a wider range of 
+brightness values during the mid-day hour, you could change `lowval` to a lower 
+number, like so:
+
+```
+        0)  highval=65000    
+            lowval=45000
+            ;;
+```            
+
+
+## 8. TODO
  
-* Function to check cache files to make sure they're still there
 * Add additional "watch" directories to INI file
 * Random error checking
 * write variant using find instead of fdfind

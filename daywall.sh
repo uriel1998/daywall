@@ -137,6 +137,8 @@ function time_of_day() {
     time_diff=$(expr $(date +%Y%m%d)${currhour} - $(date +%Y%m%d)${midday})
     abs_time_diff=${time_diff#-}
     # map the high and low value for the image for the appropriate time
+    # THESE ARE THE BRIGHTNESS VALUES TO EDIT
+    # 0 is MID-DAY
     case "${abs_time_diff}" in
         0)  highval=65000    
             lowval=54000
