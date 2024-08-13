@@ -136,12 +136,14 @@ function time_of_day() {
     fi
     
     # where is current hour in comparison to midday
-    currhour=$(date "+%-H")
+    # You need the printf because otherwise the time_diff calculation is WRONG.
+    currhour=$(printf "%02.f" $(date "+%-H"))
     time_diff=$(expr $(date +%Y%m%d)${currhour} - $(date +%Y%m%d)${midday})
     abs_time_diff=${time_diff#-}
     # map the high and low value for the image for the appropriate time
     # THESE ARE THE BRIGHTNESS VALUES TO EDIT
     # 0 is MID-DAY
+    
     case "${abs_time_diff}" in
         0)  highval=65000    
             lowval=54000
@@ -186,6 +188,8 @@ function time_of_day() {
             lowval=200
             ;;
     esac
+    echo "${abs_time_diff};$highval;$lowval;$(date +%Y%m%d)${currhour} ; $(date +%Y%m%d)${midday};$(expr $(date +%Y%m%d)${currhour} - $(date +%Y%m%d)${midday})" >> ~/debugging.txt
+
     # Use awk to parse our filelist to find something in the appropriate range
     outfile=""
     while : ; do
