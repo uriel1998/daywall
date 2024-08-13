@@ -51,6 +51,14 @@ In `$HOME/.config/daywall.ini` place the topmost directory that contains your
 
 `DIR=/PATH/TO/IMAGES`
 
+If you wish to set your coordinates as an environment variable and not use the 
+online lookup, do so like this:
+
+`export COORDS="22.73, -81.08`
+
+That's latitude and longitude, note the comma and space between them; that is 
+*required*.
+
 ## 6. Usage
 
 `daywall.sh [directory] [options]`
@@ -87,5 +95,4 @@ at run-time.
 * Function to check cache files to make sure they're still there
 * Add additional "watch" directories to INI file
 * Random error checking
-* specify lat/long as ENV variables
 * write variant using find instead of fdfind

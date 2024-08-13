@@ -43,14 +43,13 @@ function loud() {
         echo "$@"
     fi
 }
-
-
-# function to scan image dir
+    
+function scan_directory() {
     # scan the directory in the ini file; if filename is not in our cache, analyze it and add
     # scan a directory passed in $1; if filename is not in our cache, analyze it AND ADD
     # write list of images to scan from later
-    
-function scan_directory() {
+
+
     # This can be the "base" directory or one added on the fly; after the scan 
     # it doesn't matter.
     cd "${ImageDir}"
@@ -78,28 +77,51 @@ function scan_directory() {
                     loud "## Probable error processing brightness of ${line}"
                     printf "%s,%s,%s\n" "${line}" "${brightcolor}" "${NUMBER}" >> "${CacheFile}"
                 fi
-                IFS=OIFS
+                IFS=$OIFS
             fi
         fi
     done < <(echo "${imgfiles}")
 }    
     
 function clean_cache() {
-    # TODO: basically go through ${CacheFile} line by line, and omit the lines
-    # with files that no longer exist
-    echo "nope"
+    # go through ${CacheFile} line by line, and omit the lines with files that no longer exist
+    loud "## Checking filenames in cache"
+    if [ -f "${CacheFile}" ];then
+        OIFS=$IFS
+        IFS=$'\n'; set -f
+        cleantemp=$(mktemp)
+        cp "${CacheFile}" "${cleantemp}"
+        rm "${CacheFile}"
+        while read -r line; do
+            filename=$(echo "${line}" | awk -F ',' '{print $1}')
+            if [ -f "${filename}" ];then
+                loud "${filename} still exists, adding."
+                echo "${line}" >> "${CacheFile}"
+            else
+                loud "${filename} no longer present, omitting"
+            fi
+        done < <(cat "${cleantemp}")
+        rm "${cleantemp}"
+        IFS=$OIFS
+    else
+        loud "${CacheFile} does not exist, skipping clean."
+    fi
 }
 
 
 function time_of_day() {
     # get geolocated coordinates
-    # TODO: Ensure there aren't coords set by environment variable
-    
-    coords=$(curl -s https://whatismycountry.com/ | sed -e 's/picture/\n/g' -e 's/&#176;//g'  | grep "My coordinates" | awk -F '>' '{print $5}' | awk -F '<' ' {print $1}')
+
+    if [ -z "$COORDS" ]; then 
+        coords=$(curl -s https://whatismycountry.com/ | sed -e 's/picture/\n/g' -e 's/&#176;//g'  | grep "My coordinates" | awk -F '>' '{print $5}' | awk -F '<' ' {print $1}')
+    else 
+        coords="${COORDS}"
+    fi
     
     # TODO: test to make sure that's not junk and we're connected to the internet
     lat=$(echo "${coords}" | awk -F ', ' '{ print $1 }')
     long=$(echo "${coords}" | awk -F ', ' '{ print $2 }')    
+    
     sunrise=$(hdate -s -l "$lat" -L "$long" 2>/dev/null | grep "sunrise" | awk '{ print $2 }' | awk -F ':' '{ print $1 }')
     sunset=$(hdate -s -l "$lat" -L "$long" 2>/dev/null | grep "sunset" | awk '{ print $2 }' | awk -F ':' '{ print $1 }')
     
@@ -216,11 +238,12 @@ if [ ! -d "${ImageDir}" ];then
     exit 98
 fi
 
+clean_cache
+
 #TODO - have adding a directory add it to the ini file
 #TODO - read multiple directories from the ini file
 
 scan_directory
-
-loud "The randomly-selected file is: "
-echo "$(time_of_day)"
-
+FileName=$(time_of_day)
+loud "The randomly-selected file is: ${FileName}"
+feh --bg-fill --no-xinerama "${FileName}"
