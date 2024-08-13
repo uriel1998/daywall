@@ -1,6 +1,6 @@
-# mpdq
+# daywall
 
-
+A bash script to programatically select an appropriate wallpaper for what time of day it is. 
 
 ## Contents
  1. [About](#1-about)
@@ -128,7 +128,6 @@ number, like so:
             lowval=45000
             ;;
 ```            
-
 
 ## 8. TODO
  
