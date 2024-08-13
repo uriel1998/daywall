@@ -134,3 +134,4 @@ number, like so:
  
 * Add additional "watch" directories to INI file
 * Random error checking
+* ensure it's a different image (if ranges overlap, etc)
