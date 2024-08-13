@@ -4,6 +4,8 @@ A bash script to programatically select an appropriate wallpaper for what time o
 
 ![Example of images](https://github.com/uriel1998/daywall/blob/1b568e9782630c89d90db898fdbec246b7a7442c/out.jpg)
 
+An image of thumbnails of images arranged by their calculated brightness.
+
 ## Contents
  1. [About](#1-about)
  2. [License](#2-license)
