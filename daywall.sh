@@ -16,6 +16,7 @@ ConfigDir=${XDG_CONFIG_HOME:-$HOME/.config}
 ConfigFile=${ConfigDir}/daywall.ini
 CacheDir=${XDG_CACHE_HOME:-$HOME/.local/state}
 CacheFile=${CacheDir}/daywall.cache
+CurrImageName=${CacheDir}/daywall_current
 ImageDir=""
 LOUD=0
  
@@ -189,6 +190,11 @@ function time_of_day() {
     outfile=""
     while : ; do
         outfile=$(awk -F ',' -v highval="$highval" -v lowval="$lowval" '$3 <= highval && $3 >= lowval {print $1}' "${CacheFile}" | shuf | tail -1)
+        test=0
+        test=$(grep -c "$outfile" "${CurrImageName}")
+        if [ $test -ge 1 ];then
+            outfile=""
+        fi
         if [ -f "${outfile}" ]; then
             break
         fi
@@ -206,6 +212,7 @@ function time_of_day() {
             highval=66500
         fi
     done
+    echo "${outfile}" > "${CurrImageName}"
     echo "${outfile}"
 }
 
@@ -223,7 +230,9 @@ fi
 if [ ! -f "${CacheFile}" ];then
     touch "${CacheFile}"
 fi
-
+if [ ! -f "${CurrImageName}" ];then
+    touch "${CurrImageName}"
+fi
 if [ -f "${ConfigFile}" ];then
     test=$(grep -c "DIR" "${ConfigFile}")
     if [ $test -gt 0 ];then

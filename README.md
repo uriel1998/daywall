@@ -102,6 +102,9 @@ at run-time.
 If an image is not found within the appropriate range, `daywall` will increase the 
 allowable brightness range automatically.
 
+`daywall` records the image it selects, and will not use the same file on the 
+next run.
+
 ## 7. Tweaking
 
 If there is any error with analyzing the brightness, it will be recorded as "1". 
@@ -137,4 +140,3 @@ number, like so:
  
 * Add additional "watch" directories to INI file
 * Random error checking
-* ensure it's a different image (if ranges overlap, etc)
