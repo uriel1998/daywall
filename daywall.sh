@@ -6,6 +6,11 @@
  #   by Steven Saus (c)2024
  #   Licensed under the MIT license
  #
+ # Normal output is *just* the selected filename, which can be fed into 
+ # whatever you use to set your background, e.g. 
+ # feh --bg-fill --no-xinerama $(./daywall.sh) 
+ #
+ #
  ########################################################################
 
 ########################################################################
@@ -19,7 +24,7 @@ CacheFile=${CacheDir}/daywall.cache
 CurrImageName=${CacheDir}/daywall_current
 ImageDir=""
 LOUD=0
- 
+DARKEN=0 
  
 if [[ "$@" == *"--help"* ]]; then
     echo "daywall.sh"
@@ -27,14 +32,19 @@ if [[ "$@" == *"--help"* ]]; then
     echo " "
     echo "directory is optional if configuration file has the directory specified."
     echo "OPTIONS (must come after directory, if specified):"
-    echo "--help: This."
-    echo "--loud: extra output."
+    echo "--help    This."
+    echo "--darker  Darken the image further"
+    echo "--loud    Provide extra output."
     exit 0
 fi 
  
 if [[ "$@" == *"--loud"* ]]; then
     LOUD=1
 fi
+if [[ "$@" == *"--darken"* ]]; then
+    DARKEN=1
+fi
+
 ########################################################################
 # Functions
 ########################################################################
@@ -49,7 +59,6 @@ function scan_directory() {
     # scan the directory in the ini file; if filename is not in our cache, analyze it and add
     # scan a directory passed in $1; if filename is not in our cache, analyze it AND ADD
     # write list of images to scan from later
-
 
     # This can be the "base" directory or one added on the fly; after the scan 
     # it doesn't matter.
@@ -270,4 +279,20 @@ clean_cache
 scan_directory
 FileName=$(time_of_day)
 loud "The randomly-selected file is: ${FileName}"
-feh --bg-fill --no-xinerama "${FileName}"
+
+# Normal output is *just* the selected filename, which can be fed into 
+# whatever you use to set your background, e.g. 
+# feh --bg-fill --no-xinerama $(./daywall.sh) 
+#
+if [ "${DARKEN}" = "1" ];then
+        DARKEN=$(mktemp)
+        convert "${FileName}" -fill black -colorize 75% "${DARKEN}"
+        # because otherwise it ends up filling tmp with old versions!
+        cp -f "${DARKEN}" "$TMP/darker_bg.jpg"
+        rm "${DARKEN}"
+        # feh --bg-fill --no-xinerama "$TMP/darker_bg.jpg" 
+        echo "$TMP/darker_bg.jpg"
+else
+    echo "${FileName}"
+    # feh --bg-fill --no-xinerama "${FileName}"
+fi

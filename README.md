@@ -76,12 +76,20 @@ directory is optional if configuration file has the directory specified.
 
 OPTIONS (must come after directory, if specified):
 --help: This text
+--darken: Darken the output image even further for my fellow nightwalkers
 --loud: extra output when running
 
 If `--loud` is not invoked, the output will be a single full filename to use with 
 the wallpaper setting program of your choice. For example:
 
 `feh --bg-fill --no-xinerama $(daywall.sh)`
+
+### Need it darker? 
+
+Use the `--darken` option to have it convert and darken the image. Ensure that you 
+have the `$TMP` environment variable set.
+
+### Adding files
 
 The first time you run it (or add more files to what `daywall` knows about, it 
 will be slow since it does the brightness analyzation and stores that data in a 
@@ -99,22 +107,26 @@ and the image files *currently* in that directory will be added. These additiona
 directories will *not* be re-scanned for new images unless the directory is specified 
 at run-time.
 
-If an image is not found within the appropriate range, `daywall` will increase the 
-allowable brightness range automatically.
+### Image Selection
 
-`daywall` records the image it selects, and will not use the same file on the 
-next run.
+If an image is not found within the appropriate brightness range, `daywall` 
+will increase the allowable brightness range (in both directions) automatically.
+
+Additionally, `daywall` records the image it selects, and will not use the same 
+file on the next run.
 
 ## 7. Tweaking
 
-If there is any error with analyzing the brightness, it will be recorded as "1". 
-The filename will still be stored in the cache file (so you can debug), but will 
+If there is any error with analyzing the brightness, it will be recorded as "1" in 
+`$XDG_CACHE_HOME/daywall.cache`, which is actually a simple CSV file. While the 
+filename will still be stored in the cache file (so you can debug), it will 
 not be used by `daywall`.  
 
 The values in the cache file can be manually adjusted if needed.
 
-If you want to change the brightness values and their time of day, look for this
-section of the code:
+If you want to change the brightness values and their time of day (with more finesse
+than just adding the `--darken` switch), look for this section of the code:
+
 ```
     # THESE ARE THE BRIGHTNESS VALUES TO EDIT
     # 0 is MID-DAY
@@ -140,3 +152,4 @@ number, like so:
  
 * Add additional "watch" directories to INI file
 * Random error checking
+* Weather adjustment (for overcast days?)
