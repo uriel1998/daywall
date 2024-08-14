@@ -36,6 +36,7 @@ This project is licensed under the MIT License. For the full license, see `LICEN
 ## 3. Prerequisites
 
 * hdate
+* bc
 * imagemagick
 * curl
 * fdfind (or fd-find) -- optional, uses `find` if `fd-find` is not present
@@ -49,7 +50,7 @@ This project is licensed under the MIT License. For the full license, see `LICEN
 
 On Debian-like (including Ubuntu):
 
-`sudo apt install coreutils hdate fd-find curl gawk imagemagick`
+`sudo apt install coreutils hdate bc fd-find curl gawk imagemagick`
 
 ## 5. Setup
 
