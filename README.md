@@ -69,6 +69,31 @@ online lookup, do so like this:
 
 That's latitude first, then longitude. The comma and space between them is *required*.
 
+### Using with cron
+
+If you're using daywall with cron, you'll need to ensure that your environment 
+variables (including `DISPLAY=0.0`) are properly passed, and that the XDG directories 
+are appropriately assigned.  
+
+The easiest way to do this is through having your crontab entry be:
+
+`DISPLAY=0.0 /path/to/daywall_cronjob.sh`
+
+and editing `daywall_cronjob.sh` to pull in your appropriate `.bashrc` and deal
+with calling `feh` (or whatever you use to set the wallpaper).
+
+One other thing to check is what your XDG directories are. I ran into this problem, 
+because I'd changed XDG_CACHE_HOME (for random reasons) so it kept throwing errors. 
+
+To check for this, in a normal terminal window:
+```
+echo ${XDG_CONFIG_HOME}
+echo ${XDG_CACHE_HOME}
+```
+
+If those directories aren't `$HOME/.config` and `$HOME/.local/state`, then move 
+those files as needed.
+
 ## 6. Usage
 
 `daywall.sh [directory] [options]`

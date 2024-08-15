@@ -18,8 +18,8 @@
 ########################################################################
 
 ConfigDir=${XDG_CONFIG_HOME:-$HOME/.config}
-ConfigFile=${ConfigDir}/daywall.ini
 CacheDir=${XDG_CACHE_HOME:-$HOME/.local/state}
+ConfigFile=${ConfigDir}/daywall.ini
 CacheFile=${CacheDir}/daywall.cache
 CurrImageName=${CacheDir}/daywall_current
 ImageDir=""
@@ -152,7 +152,6 @@ function time_of_day() {
     # map the high and low value for the image for the appropriate time
     # THESE ARE THE BRIGHTNESS VALUES TO EDIT
     # 0 is MID-DAY
-    
     case "${abs_time_diff}" in
         0)  highval=65000    
             lowval=54000
@@ -296,3 +295,4 @@ else
     echo "${FileName}"
     # feh --bg-fill --no-xinerama "${FileName}"
 fi
+echo "${FileName}" >> /home/steven/debug.txt
