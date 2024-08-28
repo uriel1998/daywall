@@ -157,39 +157,39 @@ function time_of_day() {
             lowval=54000
             ;;
         1)  highval=54000
-            lowval=48000
+            lowval=47000
             ;;
-        2)  highval=48000
-            lowval=42000
+        2)  highval=47000
+            lowval=38000
             ;;
-        3)  highval=42000
-            lowval=36000
-            ;;
-        4)  highval=36000
+        3)  highval=38000
             lowval=30000
             ;;
-        5)  highval=30000
-            lowval=24000
+        4)  highval=30000
+            lowval=23000
             ;;
-        6)  highval=24000
-            lowval=20000
+        5)  highval=23000
+            lowval=17000
             ;;
-        7)  highval=20000
-            lowval=16000
-            ;;
-        8)  highval=16000
+        6)  highval=17000
             lowval=12000
             ;;
-        9)  highval=12000
-            lowval=8000
+        7)  highval=12000
+            lowval=9000
             ;;
-        10) highval=8000
-            lowval=4000
+        8)  highval=9000
+            lowval=6000
             ;;
-        11) highval=4000
-            lowval=2000
+        9)  highval=6000
+            lowval=4500
             ;;
-        12) highval=2000
+        10) highval=4500
+            lowval=3000
+            ;;
+        11) highval=3000
+            lowval=1500
+            ;;
+        12) highval=1500
             lowval=200
             ;;
         *)  highval=2000
