@@ -1,9 +1,13 @@
 #!/bin/bash
 
+
  ########################################################################
  # 
- #   A wrapper for daywall to symlink appropriate images to the 
+ #   A wrapper for daywall to copy appropriate images to the 
  #   images directory for xscreensaver 
+ #   Use convert (from imagemagick) so you don't have to worry about the 
+ #   type of image.  It has to be the same names in the temp dir because
+ #   xscreensaver does not re-read the directory after start.
  #   (you are responsible for configuring xscreensaver!)
  #   by Steven Saus (c)2024
  #   Licensed under the MIT license
@@ -20,24 +24,21 @@
 ########################################################################
 export SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
  
-SCREENSAVERDIR=~/tmp/daywall_screensaver
+#  NOTE:  THIS SHOULD BE HARD CODED since cron's gonna run it.
+SCREENSAVERDIR=/home/steven/tmp/daywall_screensaver
 
 if [ ! -d "${SCREENSAVERDIR}" ];then
     mkdir -p "${SCREENSAVERDIR}"
 fi
 
 # find and delete ONLY SYMLINKS in the specified directory
-find "${SCREENSAVERDIR}" -maxdepth 1 -type l -delete
+find "${SCREENSAVERDIR}" -maxdepth 1 -iname "*daywall_screensaver_*" -type f -delete
 counter=0
 while [ $counter -lt 9 ]; do
+    echo "${counter}"
     file=$("${SCRIPT_DIR}"/daywall.sh)
-    justname=$(basename "${file}")
-    ln -sf "${file}" "${SCREENSAVERDIR}"/"${justname}"
-    # start a loop (say 5-10 times)
-    # call daywall.sh
-    # create a symlink with what daywall returns to the specified directory
-    # repeat
+    convert "${file}" "${SCREENSAVERDIR}"/daywall_screensaver_"${counter}".jpg
+    
     # then call this once an hour or so
     ((counter++))
-
 done
