@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
  ########################################################################
  # 
  #   A wrapper for daywall to copy appropriate images to the 
