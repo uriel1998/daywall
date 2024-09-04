@@ -25,6 +25,7 @@ CurrImageName=${CacheDir}/daywall_current
 ImageDir=""
 LOUD=0
 DARKEN=0 
+UPDATE=1
  
 if [[ "$@" == *"--help"* ]]; then
     echo "daywall.sh"
@@ -35,8 +36,14 @@ if [[ "$@" == *"--help"* ]]; then
     echo "--help    This."
     echo "--darker  Darken the image further"
     echo "--loud    Provide extra output."
+    echo "--no-update Don't update the files for a quicker run."
     exit 0
 fi 
+
+if [[ "$@" == *"--no-update"* ]]; then
+    UPDATE=0
+fi
+
  
 if [[ "$@" == *"--loud"* ]]; then
     LOUD=1
@@ -270,12 +277,14 @@ if [ ! -d "${ImageDir}" ];then
     exit 98
 fi
 
-clean_cache
+    # TODO - have adding a directory add it to the ini file
+    # TODO - read multiple directories from the ini file
 
-#TODO - have adding a directory add it to the ini file
-#TODO - read multiple directories from the ini file
+if [ $UPDATE -eq 1 ];then
 
-scan_directory
+    clean_cache
+    scan_directory
+fi    
 FileName=$(time_of_day)
 loud "The randomly-selected file is: ${FileName}"
 
@@ -295,4 +304,4 @@ else
     echo "${FileName}"
     # feh --bg-fill --no-xinerama "${FileName}"
 fi
-echo "${FileName}" >> /home/steven/debug.txt
+

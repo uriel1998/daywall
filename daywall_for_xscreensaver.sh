@@ -35,7 +35,7 @@ find "${SCREENSAVERDIR}" -maxdepth 1 -iname "*daywall_screensaver_*" -type f -de
 counter=0
 while [ $counter -lt 9 ]; do
     echo "${counter}"
-    file=$("${SCRIPT_DIR}"/daywall.sh)
+    file=$("${SCRIPT_DIR}"/daywall.sh --no-update)
     convert "${file}" "${SCREENSAVERDIR}"/daywall_screensaver_"${counter}".jpg
     
     # then call this once an hour or so
