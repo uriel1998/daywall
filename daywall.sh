@@ -147,6 +147,15 @@ function time_of_day() {
     # doing all the math with bc to be consistent here
     midday=$(echo "($sunset-$sunrise)/2+$sunrise" | bc)
     midnight=$(echo "($sunset-$sunrise)/2+$sunset" | bc)
+
+    re='^[0-9]+$'
+    if ! [[ $midnight =~ $re ]] ; then
+        midnight=23
+    fi
+    if ! [[ $midnight =~ $re ]] ; then
+        midday=11
+    fi
+    
     if [ $midnight -gt 23 ];then
         midnight=$(echo "$midnight-24" | bc)
     fi
