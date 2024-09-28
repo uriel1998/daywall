@@ -87,14 +87,20 @@ function scan_directory() {
                 IFS=$'\n'; set -f
                 loud "Analyzing ${filename}"
                 brightcolor=$(timeout 5 convert "${line}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
-                # rounding the number, crudely.
-                NUMBER=$(echo $brightcolor | awk '{ print $0 + .90 }')
-                NUMBER=$(printf "%0.f" $NUMBER)
-                if [ $NUMBER -gt 100 ];then
-                    printf "%s,%s,%s\n" "${line}" "${brightcolor}" "${NUMBER}" >> "${CacheFile}"
+                if [ $? -eq 0 ];then
+                    # rounding the number, crudely.
+                    NUMBER=$(echo $brightcolor | awk '{ print $0 + .90 }')
+                    NUMBER=$(printf "%0.f" $NUMBER)
+                    if [ $NUMBER -gt 100 ];then
+                        printf "%s,%s,%s\n" "${line}" "${brightcolor}" "${NUMBER}" >> "${CacheFile}"
+                    else
+                        loud "## Probable error processing brightness of ${line}"
+                        loud "## with the brightness color calculation"
+                    fi
                 else
                     loud "## Probable error processing brightness of ${line}"
-                    printf "%s,%s,%s\n" "${line}" "${brightcolor}" "${NUMBER}" >> "${CacheFile}"
+                    loud "## Timeout with the processing."
+                
                 fi
                 IFS=$OIFS
             fi
