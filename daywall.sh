@@ -21,6 +21,7 @@ ConfigDir=${XDG_CONFIG_HOME:-$HOME/.config}
 CacheDir=${XDG_CACHE_HOME:-$HOME/.local/state}
 ConfigFile=${ConfigDir}/daywall.ini
 CacheFile=${CacheDir}/daywall.cache
+ErrorFile=${CacheDir}/daywall.errors
 CurrImageName=${CacheDir}/daywall_current
 ImageDir=""
 LOUD=0
@@ -94,13 +95,12 @@ function scan_directory() {
                     if [ $NUMBER -gt 100 ];then
                         printf "%s,%s,%s\n" "${line}" "${brightcolor}" "${NUMBER}" >> "${CacheFile}"
                     else
-                        loud "## Probable error processing brightness of ${line}"
-                        loud "## with the brightness color calculation"
+                        loud "## Probable error processing brightness of ${line} with the brightness color calculation." >> "${ErrorFile}"
+                        printf "%s,%s,%s\n" "${line}" "${brightcolor}" "${NUMBER}" >> "${ErrorFile}"
                     fi
                 else
-                    loud "## Probable error processing brightness of ${line}"
-                    loud "## Timeout with the processing."
-                
+                    loud "## Timeout error processing brightness of ${line}" >> "${ErrorFile}"
+                    printf "%s,%s,%s\n" "${line}" "${brightcolor}" "${NUMBER}" >> "${ErrorFile}"
                 fi
                 IFS=$OIFS
             fi
