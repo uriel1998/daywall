@@ -143,10 +143,10 @@ file on the next run.
 
 ## 7. Tweaking
 
-If there is any error with analyzing the brightness, it will be recorded as "1" in 
-`$XDG_CACHE_HOME/daywall.cache`, which is actually a simple CSV file. While the 
-filename will still be stored in the cache file (so you can debug), it will 
-not be used by `daywall`.  
+If there is any error with analyzing the brightness, it will be recorded in an 
+error log in `$XDG_CACHE_HOME/daywall.error`, which is actually a simple CSV file. 
+You should probably check for its existence when you're actively adding files, as 
+`daywall` will keep attempting to process them and it can get slow.
 
 The values in the cache file can be manually adjusted if needed.
 
