@@ -82,6 +82,9 @@ function scan_directory() {
         if [ -f "${line}" ];then 
             filename=$(basename "${line}")
             exist=$(grep -c "${filename}" "${CacheFile}")
+            if [ -z $exist ];then
+                exist=0
+            fi
             # we aren't rescanning things we already have, thanks
             if [ $exist -eq 0 ];then
                 OIFS=$IFS
@@ -120,7 +123,7 @@ function clean_cache() {
         while read -r line; do
             filename=$(echo "${line}" | awk -F ',' '{print $1}')
             if [ -f "${filename}" ];then
-                loud "${filename} still exists, adding."
+                loud "${filename} verified."
                 echo "${line}" >> "${CacheFile}"
             else
                 loud "${filename} no longer present, omitting"
