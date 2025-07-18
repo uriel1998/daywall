@@ -29,6 +29,11 @@ how far away from mid-day the current hour is, and then chooses a random image f
 the directory (or directories) you specify with a (calculated) brightness 
 appropriate to the time of day.
 
+`daywall2` uses online geolocation to find your latitude and longitude, determine 
+how far away from mid-day the current hour is, and then chooses a random image from 
+the directory (or directories) you specify *and adjusts the brightness and contrast* 
+to fit within limits appropriate to the time of day.
+
 ## 2. License
 
 This project is licensed under the MIT License. For the full license, see `LICENSE`.
@@ -54,6 +59,19 @@ On Debian-like (including Ubuntu):
 
 ## 5. Setup
 
+### Daywall 2
+
+If you wish to set your coordinates as an environment variable and not use the 
+online lookup, do so like this:
+
+`export COORDS="22.73, -81.08`
+
+That's latitude first, then longitude. The comma and space between them is *required*.
+
+You do not need an INI or other configuration file.
+
+### Daywall
+
 In `$HOME/.config/daywall.ini` place the topmost directory that contains your 
 (default) wallpaper images, like so:
 
@@ -69,7 +87,8 @@ online lookup, do so like this:
 
 That's latitude first, then longitude. The comma and space between them is *required*.
 
-### Using with cron
+
+### Using with cron (both versions)
 
 If you're using daywall with cron, you'll need to ensure that your environment 
 variables (including `DISPLAY=0.0`) are properly passed, and that the XDG directories 
@@ -96,6 +115,36 @@ those files as needed.
 
 ## 6. Usage
 
+### Daywall 2
+
+    
+`daywall2.sh [OPTIONS]`
+
+If a directory is not provided, defaults to `${PWD}`.    
+
+Options:
+
+    --loud    Provide extra output.
+    --high    Maximum high value for brightness
+    --low     Minimum low value for brightness
+    --dirs    directories to recursively search for files
+    --cords   Your coordinates to avoid lookup
+
+For example, 
+
+`daywall2.sh --dirs /path/to/images /another/path/to/images --high 27000`
+
+The adjusted image will be placed at `$XDG_CACHE_HOME/daywall_darkened.jpg`
+
+#### Tweaking
+    
+    Try specifying --high and --low to keep it from maxing out on either end.  
+    The results can still sometimes look really silly if it chooses a very dark 
+    image around high noon.
+
+
+### Daywall
+
 `daywall.sh [directory] [options]`
 
 directory is optional if configuration file has the directory specified.
@@ -110,12 +159,12 @@ the wallpaper setting program of your choice. For example:
 
 `feh --bg-fill --no-xinerama $(daywall.sh)`
 
-### Need it darker? 
+#### Need it darker? 
 
 Use the `--darken` option to have it convert and darken the image. Ensure that you 
 have the `$TMP` environment variable set.
 
-### Adding files
+#### Adding files
 
 The first time you run it (or add more files to what `daywall` knows about, it 
 will be slow since it does the brightness analyzation and stores that data in a 
@@ -133,7 +182,7 @@ and the image files *currently* in that directory will be added. These additiona
 directories will *not* be re-scanned for new images unless the directory is specified 
 at run-time.
 
-### Image Selection
+#### Image Selection
 
 If an image is not found within the appropriate brightness range, `daywall` 
 will increase the allowable brightness range (in both directions) automatically.
@@ -141,7 +190,7 @@ will increase the allowable brightness range (in both directions) automatically.
 Additionally, `daywall` records the image it selects, and will not use the same 
 file on the next run.
 
-## 7. Tweaking
+#### Tweaking
 
 If there is any error with analyzing the brightness, it will be recorded in an 
 error log in `$XDG_CACHE_HOME/daywall.error`, which is actually a simple CSV file. 
