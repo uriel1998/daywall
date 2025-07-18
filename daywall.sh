@@ -139,7 +139,6 @@ function clean_cache() {
 
 function time_of_day() {
     # get geolocated coordinates
-
     if [ -z "$COORDS" ]; then 
         coords=$(curl -s https://whatismycountry.com/ | sed -e 's/picture/\n/g' -e 's/&#176;//g'  | grep "My coordinates" | awk -F '>' '{print $5}' | awk -F '<' ' {print $1}')
     else 
@@ -149,7 +148,6 @@ function time_of_day() {
     # TODO: test to make sure that's not junk and we're connected to the internet
     lat=$(echo "${coords}" | awk -F ', ' '{ print $1 }')
     long=$(echo "${coords}" | awk -F ', ' '{ print $2 }')    
-    
     sunrise=$(hdate -s -l "$lat" -L "$long" 2>/dev/null | grep "sunrise" | awk '{ print $2 }' | awk -F ':' '{ print $1 }')
     sunset=$(hdate -s -l "$lat" -L "$long" 2>/dev/null | grep "sunset" | awk '{ print $2 }' | awk -F ':' '{ print $1 }')
     
@@ -299,13 +297,13 @@ fi
     # TODO - read multiple directories from the ini file
 
 if [ $UPDATE -eq 1 ];then
-
     clean_cache
     scan_directory
 fi    
+
 FileName=$(time_of_day)
 loud "The randomly-selected file is: ${FileName}"
-
+    
 # Normal output is *just* the selected filename, which can be fed into 
 # whatever you use to set your background, e.g. 
 # feh --bg-fill --no-xinerama $(./daywall.sh) 
