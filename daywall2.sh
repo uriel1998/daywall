@@ -77,20 +77,20 @@ adjust_brightness() {
     brightcolor=$(timeout 5 convert "${filename}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
     current_brightness=$(echo $brightcolor | awk '{print int($1)}')
 
-    loud "Current brightness: $current_brightness"
-    loud "high range = $high_range"
-    loud "low = $low_range"
+    loud "[info] Current brightness: $current_brightness"
+    loud "[info] high range = $high_range"
+    loud "[info] low = $low_range"
     # If brightness is within range, no adjustment is needed
     if (( current_brightness >= low_range && current_brightness <= high_range )); then
-        loud "Brightness is within the acceptable range."
+        loud "[info] Brightness is within the acceptable range."
         convert "${filename}" "${darker_filename}"
-        loud "Returning original image as darkened image: ${darker_filename}"
+        loud "[info] Returning original image as darkened image: ${darker_filename}"
         return 0
     fi
 
     # If brightness is too low, brighten the image
     if (( current_brightness < low_range )); then
-        loud "Brightness is too low, brightening the image..."
+        loud "[info] Brightness is too low, brightening the image..."
 
         # Iteratively brighten the image until it's within the range
         while (( current_brightness < low_range )); do
@@ -99,14 +99,14 @@ adjust_brightness() {
             #convert "${filename}" -fill white -colorize ${percent}% "${darker_filename}"
             brightcolor=$(timeout 5 convert "${darker_filename}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
             current_brightness=$(echo "${brightcolor}" | awk '{print int($1)}')
-            loud "Adjusted brightness: ${current_brightness}"
+            loud "[info] Adjusted brightness: ${current_brightness}"
         done
     fi
 
 
     # If brightness is too high, darken the image
     if (( current_brightness > high_range )); then
-        loud "Brightness is too high, darkening the image..."
+        loud "[info] Brightness is too high, darkening the image..."
 
         # Iteratively darken the image until it's within the range
         while (( current_brightness > high_range )); do
@@ -115,12 +115,12 @@ adjust_brightness() {
             #convert "${filename}" -fill black -colorize ${percent}% "${darker_filename}"
             brightcolor=$(timeout 5 convert "${darker_filename}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
             current_brightness=$(echo $brightcolor | awk '{print int($1)}')
-            loud "Adjusted brightness: $current_brightness"
+            loud "[info] Adjusted brightness: $current_brightness"
         done
     fi
 
     # Return the new darkened image filename
-    loud "Darkened image saved as: ${darker_filename}"
+    loud "[info] Darkened image saved as: ${darker_filename}"
 }
  
 
