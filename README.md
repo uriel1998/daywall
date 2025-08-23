@@ -130,6 +130,8 @@ Options:
     --low     Minimum low value for brightness
     --dirs    directories to recursively search for files
     --cords   Your coordinates to avoid lookup
+    --nobr    Do not brighten any image, just darken
+    --nodrk   Do not darken any image, just brighten
 
 For example, 
 
