@@ -91,7 +91,7 @@ adjust_brightness() {
         return 0
     fi
 
-    if [ "${nobr}" == "" ];then
+    if [ "$nobr" == "" ];then
         # If brightness is too low, brighten the image
         if (( current_brightness < low_range )); then
             loud "[info] Brightness is too low, brightening the image..."
@@ -108,7 +108,7 @@ adjust_brightness() {
         fi
     fi
 
-    if [ "${nodrk}" == "" ];then
+    if [ "$nodrk" == "" ];then
         # If brightness is too high, darken the image
         if (( current_brightness > high_range )); then
             loud "[info] Brightness is too high, darkening the image..."
