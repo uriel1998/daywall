@@ -26,6 +26,7 @@ high=""
 low=""
 lat=""
 long=""
+nobr=""
 dirs=()
 
  
@@ -41,6 +42,8 @@ show_help (){
     echo "--low     Minimum low value for brightness"
     echo "--dirs    directories to recursively search for files"
     echo "--cords   Your coordinates to avoid lookup"
+    echo "--nobr    Not brighten images"
+    echo "--nodrk   Not darken images"
 }
 
 ########################################################################
@@ -88,39 +91,42 @@ adjust_brightness() {
         return 0
     fi
 
-    # If brightness is too low, brighten the image
-    if (( current_brightness < low_range )); then
-        loud "[info] Brightness is too low, brightening the image..."
+    if [ "${nobr}" == "" ];then
+        # If brightness is too low, brighten the image
+        if (( current_brightness < low_range )); then
+            loud "[info] Brightness is too low, brightening the image..."
 
-        # Iteratively brighten the image until it's within the range
-        while (( current_brightness < low_range )); do
-            (( percent += percentup ))
-            convert "${filename}" -brightness-contrast ${percent}x${percent} "${darker_filename}"
-            #convert "${filename}" -fill white -colorize ${percent}% "${darker_filename}"
-            brightcolor=$(timeout 5 convert "${darker_filename}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
-            current_brightness=$(echo "${brightcolor}" | awk '{print int($1)}')
-            loud "[info] Adjusted brightness: ${current_brightness}"
-        done
+            # Iteratively brighten the image until it's within the range
+            while (( current_brightness < low_range )); do
+                (( percent += percentup ))
+                convert "${filename}" -brightness-contrast ${percent}x${percent} "${darker_filename}"
+                #convert "${filename}" -fill white -colorize ${percent}% "${darker_filename}"
+                brightcolor=$(timeout 5 convert "${darker_filename}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
+                current_brightness=$(echo "${brightcolor}" | awk '{print int($1)}')
+                loud "[info] Adjusted brightness: ${current_brightness}"
+            done
+        fi
     fi
 
+    if [ "${nodrk}" == "" ];then
+        # If brightness is too high, darken the image
+        if (( current_brightness > high_range )); then
+            loud "[info] Brightness is too high, darkening the image..."
 
-    # If brightness is too high, darken the image
-    if (( current_brightness > high_range )); then
-        loud "[info] Brightness is too high, darkening the image..."
-
-        # Iteratively darken the image until it's within the range
-        while (( current_brightness > high_range )); do
-            (( percent+=$percentup ))
-            convert "${filename}" -brightness-contrast -${percent}x-${percent} "${darker_filename}"
-            #convert "${filename}" -fill black -colorize ${percent}% "${darker_filename}"
-            brightcolor=$(timeout 5 convert "${darker_filename}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
-            current_brightness=$(echo $brightcolor | awk '{print int($1)}')
-            loud "[info] Adjusted brightness: $current_brightness"
-        done
+            # Iteratively darken the image until it's within the range
+            while (( current_brightness > high_range )); do
+                (( percent+=$percentup ))
+                convert "${filename}" -brightness-contrast -${percent}x-${percent} "${darker_filename}"
+                #convert "${filename}" -fill black -colorize ${percent}% "${darker_filename}"
+                brightcolor=$(timeout 5 convert "${darker_filename}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
+                current_brightness=$(echo $brightcolor | awk '{print int($1)}')
+                loud "[info] Adjusted brightness: $current_brightness"
+            done
+        fi
     fi
 
-    # Return the new darkened image filename
-    loud "[info] Darkened image saved as: ${darker_filename}"
+    # Return the new image filename
+    loud "[info] Adjusted image saved as: ${darker_filename}"
 }
  
 
@@ -217,6 +223,14 @@ while [[ $# -gt 0 ]]; do
       LOUD=1
       shift
       ;;
+    --nobr)
+        nobr=1
+        shift
+        ;;
+    --nodrk)
+        nobr=1
+        shift
+        ;;
     --high)
       higharg="$2"
       shift 2

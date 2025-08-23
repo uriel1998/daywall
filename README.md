@@ -1,6 +1,7 @@
 # daywall
 
 A bash script to programatically select an appropriate wallpaper for what time of day it is. 
+A second bash script to programatically alter the brightness of a wallpaper for what time of day it is.
 
 ![Example of images](https://github.com/uriel1998/daywall/blob/1b568e9782630c89d90db898fdbec246b7a7442c/out.jpg)
 
