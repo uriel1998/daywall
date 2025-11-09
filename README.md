@@ -43,7 +43,20 @@ This project is licensed under the MIT License. For the full license, see `LICEN
 
 * hdate
 * bc
-* imagemagick
+* imagemagick 
+
+### Important note: Now tuned for imagemagick 7.
+
+* If you're still on imagemagick 6, look for the commented lines in `daywall2.sh` like these:
+
+```
+	#imagemagick 7
+	brightcolor=$(timeout 5 magick identify -format "%[fx:quantumrange*mean]" -colorspace Gray "${darker_filename}")
+	#imagemagick 6
+	#brightcolor=$(timeout 5 convert "${darker_filename}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
+```
+
+and swap which one is commented out.
 * curl
 * fdfind (or fd-find) -- optional, uses `find` if `fd-find` is not present
 * gawk

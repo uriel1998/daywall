@@ -76,8 +76,12 @@ adjust_brightness() {
     local current_brightness
     local darker_filename="${CacheDir}/daywall_darkened.jpg"
 
+    
     # Get the current brightness of the image
-    brightcolor=$(timeout 5 convert "${filename}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
+    # this is for imagemagick 7
+    brightcolor=$(magick identify -format "%[fx:quantumrange*mean]" -colorspace Gray "${filename}")
+    #below is for imagemagick 6
+    #brightcolor=$(timeout 5 convert "${filename}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
     current_brightness=$(echo $brightcolor | awk '{print int($1)}')
 
     loud "[info] Current brightness: $current_brightness"
@@ -101,7 +105,10 @@ adjust_brightness() {
                 (( percent += percentup ))
                 convert "${filename}" -brightness-contrast ${percent}x${percent} "${darker_filename}"
                 #convert "${filename}" -fill white -colorize ${percent}% "${darker_filename}"
-                brightcolor=$(timeout 5 convert "${darker_filename}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
+                #imagemagick 7
+                brightcolor=$(timeout 5 magick identify -format "%[fx:quantumrange*mean]" -colorspace Gray "${darker_filename}")
+                #imagemagick 6
+                #brightcolor=$(timeout 5 convert "${darker_filename}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
                 current_brightness=$(echo "${brightcolor}" | awk '{print int($1)}')
                 loud "[info] Adjusted brightness: ${current_brightness}"
             done
@@ -118,7 +125,10 @@ adjust_brightness() {
                 (( percent+=$percentup ))
                 convert "${filename}" -brightness-contrast -${percent}x-${percent} "${darker_filename}"
                 #convert "${filename}" -fill black -colorize ${percent}% "${darker_filename}"
-                brightcolor=$(timeout 5 convert "${darker_filename}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
+                #imagemagick 7
+                brightcolor=$(timeout 5 magick identify -format "%[fx:quantumrange*mean]" -colorspace Gray "${darker_filename}")
+                #imagemagick 6
+                #brightcolor=$(timeout 5 convert "${darker_filename}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
                 current_brightness=$(echo $brightcolor | awk '{print int($1)}')
                 loud "[info] Adjusted brightness: $current_brightness"
             done

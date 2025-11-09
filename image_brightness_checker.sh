@@ -21,7 +21,8 @@ while read -r line; do
         filename=$(basename "${line}")
         OIFS=$IFS
         IFS=$'\n'; set -f
-        brightcolor=$(timeout 5 convert "${line}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
+        
+        brightcolor=$(timeout 5 magick identify -format "%[fx:quantumrange*mean]" -colorspace Gray "${line}")
         # rounding the number, crudely.
         NUMBER=$(echo $brightcolor | awk '{ print $0 + .90 }')
         NUMBER=$(printf "%0.f" $NUMBER)
