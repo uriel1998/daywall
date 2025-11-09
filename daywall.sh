@@ -90,7 +90,9 @@ function scan_directory() {
                 OIFS=$IFS
                 IFS=$'\n'; set -f
                 loud "Analyzing ${filename}"
-                brightcolor=$(timeout 5 convert "${line}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
+                brightcolor=$(timeout 5 magick identify -format "%[fx:quantumrange*mean]" -colorspace Gray "${line}")
+                # imagemagick 6
+                #brightcolor=$(timeout 5 convert "${line}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
                 if [ $? -eq 0 ];then
                     # rounding the number, crudely.
                     NUMBER=$(echo $brightcolor | awk '{ print $0 + .90 }')

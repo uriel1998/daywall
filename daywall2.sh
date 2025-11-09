@@ -21,12 +21,13 @@
 
 CacheDir="${XDG_CACHE_HOME:-$HOME/.local/state}"
 export SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
-LOUD=0
+LOUD=1
 high=""
 low=""
 lat=""
 long=""
 nobr=""
+nodrk=""
 dirs=()
 
  
@@ -79,7 +80,7 @@ adjust_brightness() {
     
     # Get the current brightness of the image
     # this is for imagemagick 7
-    brightcolor=$(magick identify -format "%[fx:quantumrange*mean]" -colorspace Gray "${filename}")
+    brightcolor=$(timeout 5 magick identify -format "%[fx:quantumrange*mean]" -colorspace Gray "${filename}")
     #below is for imagemagick 6
     #brightcolor=$(timeout 5 convert "${filename}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
     current_brightness=$(echo $brightcolor | awk '{print int($1)}')
@@ -95,45 +96,55 @@ adjust_brightness() {
         return 0
     fi
 
-    if [ "$nobr" == "" ];then
-        # If brightness is too low, brighten the image
-        if (( current_brightness < low_range )); then
-            loud "[info] Brightness is too low, brightening the image..."
+	if [ -z "${nobr}" ]; then
+		# If brightness is too low, brighten the image
+		if (( current_brightness < low_range )); then
+			loud "[info] Brightness is too low, brightening the image..."
 
-            # Iteratively brighten the image until it's within the range
-            while (( current_brightness < low_range )); do
-                (( percent += percentup ))
-                convert "${filename}" -brightness-contrast ${percent}x${percent} "${darker_filename}"
-                #convert "${filename}" -fill white -colorize ${percent}% "${darker_filename}"
-                #imagemagick 7
-                brightcolor=$(timeout 5 magick identify -format "%[fx:quantumrange*mean]" -colorspace Gray "${darker_filename}")
-                #imagemagick 6
-                #brightcolor=$(timeout 5 convert "${darker_filename}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
-                current_brightness=$(echo "${brightcolor}" | awk '{print int($1)}')
-                loud "[info] Adjusted brightness: ${current_brightness}"
-            done
-        fi
-    fi
+			factor=1.0
 
-    if [ "$nodrk" == "" ];then
-        # If brightness is too high, darken the image
-        if (( current_brightness > high_range )); then
-            loud "[info] Brightness is too high, darkening the image..."
+			# Iteratively brighten the image until it's within the range
+			while (( current_brightness < low_range )); do
+				# Increase factor by percentup percent each loop (e.g. 5 -> +5%)
+				factor=$(awk -v f="${factor}" -v step="${percentup}" 'BEGIN{print f*(1+step/100)}')
 
-            # Iteratively darken the image until it's within the range
-            while (( current_brightness > high_range )); do
-                (( percent+=$percentup ))
-                convert "${filename}" -brightness-contrast -${percent}x-${percent} "${darker_filename}"
-                #convert "${filename}" -fill black -colorize ${percent}% "${darker_filename}"
-                #imagemagick 7
-                brightcolor=$(timeout 5 magick identify -format "%[fx:quantumrange*mean]" -colorspace Gray "${darker_filename}")
-                #imagemagick 6
-                #brightcolor=$(timeout 5 convert "${darker_filename}" -colorspace Gray -format "%[fx:quantumrange*image.mean]" info:)
-                current_brightness=$(echo $brightcolor | awk '{print int($1)}')
-                loud "[info] Adjusted brightness: $current_brightness"
-            done
-        fi
-    fi
+				# ImageMagick 7
+				magick "${filename}" -colorspace RGB -evaluate Multiply "${factor}" "${darker_filename}"
+
+				# ImageMagick 6 equivalent:
+				#convert "${filename}" -colorspace RGB -evaluate Multiply "${factor}" "${darker_filename}"
+
+				brightcolor=$(timeout 5 magick identify -colorspace Gray -format "%[fx:quantumrange*mean]" "${darker_filename}")
+				#brightcolor=$(timeout 5 convert "${darker_filename}" -colorspace Gray -format "%[fx:quantumrange*mean]" info:)
+
+				current_brightness=$(echo "${brightcolor}" | awk '{print int($1)}')
+				loud "[info] Adjusted brightness: ${current_brightness} (factor=${factor})"
+
+				# (optional safety) break if factor gets ridiculous to avoid nuking highlights
+				#awk -v f="${factor}" 'BEGIN{if (f > 5) exit 1}' || break
+			done
+		fi
+	fi
+
+	if [ -z "${nodrk}" ]; then
+		if (( current_brightness > high_range )); then
+			loud "[info] Brightness is too high, darkening the image..."
+
+			factor=1.0
+
+			while (( current_brightness > high_range )); do
+				# Reduce by a step, e.g. 5% per iteration
+				factor=$(awk -v f="${factor}" -v step="${percentup}" 'BEGIN{print f*(1-step/100)}')
+
+				magick "${filename}" -colorspace RGB -evaluate Multiply "${factor}" "${darker_filename}"
+
+				brightcolor=$(timeout 5 magick identify -colorspace Gray -format "%[fx:quantumrange*mean]" "${darker_filename}")
+				current_brightness=$(echo "${brightcolor}" | awk '{print int($1)}')
+
+				loud "[info] Adjusted brightness: ${current_brightness} (factor=${factor})"
+			done
+		fi
+	fi
 
     # Return the new image filename
     loud "[info] Adjusted image saved as: ${darker_filename}"
@@ -234,11 +245,11 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --nobr)
-        nobr=1
+        export nobr=1
         shift
         ;;
     --nodrk)
-        nobr=1
+        export nodrk=1
         shift
         ;;
     --high)
