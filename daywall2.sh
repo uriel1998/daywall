@@ -21,7 +21,7 @@
 
 CacheDir="${XDG_CACHE_HOME:-$HOME/.local/state}"
 export SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
-LOUD=1
+LOUD=0
 high=""
 low=""
 lat=""
