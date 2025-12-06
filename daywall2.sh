@@ -1,17 +1,17 @@
 #!/bin/bash
 
  ########################################################################
- # 
+ #
  #   Daywall2 - A time/brightness based background changer
  #   by Steven Saus (c)2025
  #   Licensed under the MIT license
  #
- # Normal output is *just* the selected filename, which can be fed into 
- # whatever you use to set your background, e.g. 
- # feh --bg-fill --no-xinerama $(./daywall2.sh) 
+ # Normal output is *just* the selected filename, which can be fed into
+ # whatever you use to set your background, e.g.
+ # feh --bg-fill --no-xinerama $(./daywall2.sh)
  #
  # Or you can hardcode it in.
- # 
+ #
  # THE BACKGROUND WILL BE PUT IN $XDG_CACHE_HOME/daywall_darkened.jpg
  ########################################################################
 
@@ -30,7 +30,7 @@ nobr=""
 nodrk=""
 dirs=()
 
- 
+
 show_help (){
     echo "daywall2.sh"
     echo "usage:  daywall2.sh [OPTIONS]"
@@ -45,13 +45,14 @@ show_help (){
     echo "--cords   Your coordinates to avoid lookup"
     echo "--nobr    Not brighten images"
     echo "--nodrk   Not darken images"
+    echo "--image [path]  Adjust a specific image"
 }
 
 ########################################################################
 # Functions
 ########################################################################
 
-# loud outputs on stderr 
+# loud outputs on stderr
 function loud() {
     if [ $LOUD -eq 1 ];then
         echo "$@" 1>&2
@@ -64,8 +65,8 @@ find_image () {
   image=$(echo "$imagelist" | shuf -n 1)
   echo "${image}"
 }
- 
- 
+
+
 # Function to adjust the brightness of the image to fall within the desired range
 adjust_brightness() {
     local filename="${1}"
@@ -77,7 +78,7 @@ adjust_brightness() {
     local current_brightness
     local darker_filename="${CacheDir}/daywall_darkened.jpg"
 
-    
+
     # Get the current brightness of the image
     # this is for imagemagick 7
     brightcolor=$(timeout 5 magick identify -format "%[fx:quantumrange*mean]" -colorspace Gray "${filename}")
@@ -149,7 +150,7 @@ adjust_brightness() {
     # Return the new image filename
     loud "[info] Adjusted image saved as: ${darker_filename}"
 }
- 
+
 
 function locale_time_brightness () {
     local highval=""
@@ -157,10 +158,10 @@ function locale_time_brightness () {
 
     # TODO: test to make sure that's not junk and we're connected to the internet
     lat=$(echo "${coords}" | awk -F ', ' '{ print $1 }')
-    long=$(echo "${coords}" | awk -F ', ' '{ print $2 }')    
+    long=$(echo "${coords}" | awk -F ', ' '{ print $2 }')
     sunrise=$(hdate -s -l "$lat" -L "$long" 2>/dev/null | grep "sunrise" | awk '{ print $2 }' | awk -F ':' '{ print $1 }')
     sunset=$(hdate -s -l "$lat" -L "$long" 2>/dev/null | grep "sunset" | awk '{ print $2 }' | awk -F ':' '{ print $1 }')
-    
+
     # doing all the math with bc to be consistent here
     midday=$(echo "($sunset-$sunrise)/2+$sunrise" | bc)
     midnight=$(echo "($sunset-$sunrise)/2+$sunset" | bc)
@@ -172,11 +173,11 @@ function locale_time_brightness () {
     if ! [[ $midnight =~ $re ]] ; then
         midday=11
     fi
-    
+
     if [ $midnight -gt 23 ];then
         midnight=$(echo "$midnight-24" | bc)
     fi
-    
+
     # where is current hour in comparison to midday
     # You need the printf because otherwise the time_diff calculation is WRONG.
     currhour=$(printf "%02.f" $(date "+%-H"))
@@ -186,7 +187,7 @@ function locale_time_brightness () {
     # THESE ARE THE BRIGHTNESS VALUES TO EDIT
     # 0 is MID-DAY
     case "${abs_time_diff}" in
-        0)  highval=65000    
+        0)  highval=65000
             lowval=54000
             ;;
         1)  highval=54000
@@ -244,6 +245,13 @@ while [[ $# -gt 0 ]]; do
       LOUD=1
       shift
       ;;
+    --image)
+    shift
+      if [ -f "${1}" ];then
+        source_image="${1}"
+      fi
+      shift
+      ;;
     --nobr)
         export nobr=1
         shift
@@ -291,15 +299,15 @@ if [ "$lat" != "" ] && [ "$long" != "" ];then
     COORDS=$(echo "$lat, $long")
 else
     # get geolocated coordinates
-    if [ -z "$COORDS" ]; then 
+    if [ -z "$COORDS" ]; then
         coords=$(curl -s https://whatismycountry.com/ | sed -e 's/picture/\n/g' -e 's/&#176;//g'  | grep "My coordinates" | awk -F '>' '{print $5}' | awk -F '<' ' {print $1}')
-    else 
+    else
         coords="${COORDS}"
     fi
 fi
 
-# get the location and time based brightness levels, compare against 
-# what the user wants. 
+# get the location and time based brightness levels, compare against
+# what the user wants.
 read high low < <(locale_time_brightness)
 
 
@@ -321,9 +329,12 @@ if [[ "$high" -lt "$low" ]];then
     fi
 fi
 
-source_image=$(find_image "${dirs[@]}")
+#if it was passed from the command line
+if [ "$source_image" != "" ];then
+    loud "[info] Using source image: ${source_image}"
+else
+    source_image=$(find_image "${dirs[@]}")
+fi
 adjust_brightness "${source_image}" "${high}" "${low}"
 echo "${CacheDir}/daywall_darkened.jpg" &
 #feh --bg-fill --no-xinerama "${CacheDir}/daywall_darkened.jpg"
-
-
