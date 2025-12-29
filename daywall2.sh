@@ -159,18 +159,33 @@ function locale_time_brightness () {
     # TODO: test to make sure that's not junk and we're connected to the internet
     lat=$(echo "${coords}" | awk -F ', ' '{ print $1 }')
     long=$(echo "${coords}" | awk -F ', ' '{ print $2 }')
-    sunrise=$(hdate -s -l "$lat" -L "$long" 2>/dev/null | grep "sunrise" | awk '{ print $2 }' | awk -F ':' '{ print $1 }')
-    sunset=$(hdate -s -l "$lat" -L "$long" 2>/dev/null | grep "sunset" | awk '{ print $2 }' | awk -F ':' '{ print $1 }')
 
-    # doing all the math with bc to be consistent here
-    midday=$(echo "($sunset-$sunrise)/2+$sunrise" | bc)
-    midnight=$(echo "($sunset-$sunrise)/2+$sunset" | bc)
+    # Check if coordinates are valid before calling hdate
+    if [ -n "$lat" ] && [ -n "$long" ]; then
+        sunrise=$(hdate -s -l "$lat" -L "$long" 2>/dev/null | grep "sunrise" | awk '{ print $2 }' | awk -F ':' '{ print $1 }')
+        sunset=$(hdate -s -l "$lat" -L "$long" 2>/dev/null | grep "sunset" | awk '{ print $2 }' | awk -F ':' '{ print $1 }')
+    else
+        loud "[warning] Invalid or missing coordinates, using defaults"
+        sunrise=""
+        sunset=""
+    fi
+
+    # Check if sunrise/sunset are valid before doing math
+    if [ -n "$sunrise" ] && [ -n "$sunset" ]; then
+        # doing all the math with bc to be consistent here
+        midday=$(echo "($sunset-$sunrise)/2+$sunrise" | bc)
+        midnight=$(echo "($sunset-$sunrise)/2+$sunset" | bc)
+    else
+        loud "[warning] Failed to get sunrise/sunset times, using defaults"
+        midday=12
+        midnight=0
+    fi
 
     re='^[0-9]+$'
     if ! [[ $midnight =~ $re ]] ; then
         midnight=23
     fi
-    if ! [[ $midnight =~ $re ]] ; then
+    if ! [[ $midday =~ $re ]] ; then
         midday=11
     fi
 
@@ -283,9 +298,14 @@ while [[ $# -gt 0 ]]; do
         shift
       done
       ;;
+    --help)
+      show_help
+      exit 0
+      ;;
     *)
       echo "Unknown argument: $1"
-      shift
+      show_help
+      exit 1
       ;;
   esac
 done
@@ -300,7 +320,7 @@ if [ "$lat" != "" ] && [ "$long" != "" ];then
 else
     # get geolocated coordinates
     if [ -z "$COORDS" ]; then
-        coords=$(curl -s https://whatismycountry.com/ | sed -e 's/picture/\n/g' -e 's/&#176;//g'  | grep "My coordinates" | awk -F '>' '{print $5}' | awk -F '<' ' {print $1}')
+        coords=$(curl -s https://whatismycountry.com/ | grep -oE '[0-9]+\.[0-9]+, -[0-9]+\.[0-9]+' | head -1)
     else
         coords="${COORDS}"
     fi
@@ -311,10 +331,10 @@ fi
 read high low < <(locale_time_brightness)
 
 
-if [[ "$higharg" != "" ]] && [[ "$higharg" -lt "$high" ]]; then
+if [[ "$higharg" != "" ]]; then
     high="${higharg}"
 fi
-if [[ "$lowarg"  != "" ]] && [[ "$lowarg" -gt "$low" ]]; then
+if [[ "$lowarg"  != "" ]]; then
     low="${lowarg}"
 fi
 if [[ "$low" -gt 65000 ]];then
