@@ -198,6 +198,9 @@ function locale_time_brightness () {
     currhour=$(printf "%02.f" $(date "+%-H"))
     time_diff=$(expr $(date +%Y%m%d)${currhour} - $(date +%Y%m%d)${midday})
     abs_time_diff=${time_diff#-}
+    abs_time_diff=10
+    loud "[info] Time differential is $abs_time_diff"
+    
     # map the high and low value for the image for the appropriate time
     # THESE ARE THE BRIGHTNESS VALUES TO EDIT
     # 0 is MID-DAY
@@ -332,10 +335,14 @@ read high low < <(locale_time_brightness)
 
 
 if [[ "$higharg" != "" ]]; then
-    high="${higharg}"
+	if [[ "$higharg" -lt "$high" ]];then
+		high="${higharg}"
+	fi
 fi
 if [[ "$lowarg"  != "" ]]; then
-    low="${lowarg}"
+	if [[ "$lowarg" -gt "$low" ]];then
+		low="${lowarg}"
+	fi
 fi
 if [[ "$low" -gt 65000 ]];then
     low=61000
