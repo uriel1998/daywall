@@ -32,7 +32,7 @@ appropriate to the time of day.
 
 `daywall2` uses online geolocation to find your latitude and longitude, determine 
 how far away from mid-day the current hour is, and then chooses a random image from 
-the directory (or directories) you specify *and adjusts the brightness and contrast* 
+the directory (or directories) you specify *and adjusts the brightness* 
 to fit within limits appropriate to the time of day.
 
 ## 2. License
@@ -184,7 +184,7 @@ have the `$TMP` environment variable set.
 
 The first time you run it (or add more files to what `daywall` knows about, it 
 will be slow since it does the brightness analyzation and stores that data in a 
-simple CSV file in `$HOME/.config/daywall.cache`.  Images added to the directory 
+simple CSV file in `$XDG_CACHE_HOME/daywall.cache` (default `$HOME/.local/state/daywall.cache`).  Images added to the directory 
 specified in the INI file will be added on the next run automatically. 
 
 If you specify a directory on the commandline, that directory's *files* will be 
@@ -209,7 +209,7 @@ file on the next run.
 #### Tweaking
 
 If there is any error with analyzing the brightness, it will be recorded in an 
-error log in `$XDG_CACHE_HOME/daywall.error`, which is actually a simple CSV file. 
+error log in `$XDG_CACHE_HOME/daywall.errors`, which is actually a simple CSV file. 
 You should probably check for its existence when you're actively adding files, as 
 `daywall` will keep attempting to process them and it can get slow.
 

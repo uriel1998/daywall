@@ -1,14 +1,14 @@
 #!/bin/bash
 
  ########################################################################
- # 
+ #
  #   Daywall - A time/brightness based background changer
  #   by Steven Saus (c)2024
  #   Licensed under the MIT license
  #
- # Normal output is *just* the selected filename, which can be fed into 
- # whatever you use to set your background, e.g. 
- # feh --bg-fill --no-xinerama $(./daywall.sh) 
+ # Normal output is *just* the selected filename, which can be fed into
+ # whatever you use to set your background, e.g.
+ # feh --bg-fill --no-xinerama $(./daywall.sh)
  #
  #
  ########################################################################
@@ -25,9 +25,9 @@ ErrorFile=${CacheDir}/daywall.errors
 CurrImageName=${CacheDir}/daywall_current
 ImageDir=""
 LOUD=0
-DARKEN=0 
+DARKEN=0
 UPDATE=1
- 
+
 if [[ "$@" == *"--help"* ]]; then
     echo "daywall.sh"
     echo "usage:  daywall.sh [directory] [OPTIONS]"
@@ -35,17 +35,17 @@ if [[ "$@" == *"--help"* ]]; then
     echo "directory is optional if configuration file has the directory specified."
     echo "OPTIONS (must come after directory, if specified):"
     echo "--help    This."
-    echo "--darker  Darken the image further"
+    echo "--darken  Darken the image further"
     echo "--loud    Provide extra output."
     echo "--no-update Don't update the files for a quicker run."
     exit 0
-fi 
+fi
 
 if [[ "$@" == *"--no-update"* ]]; then
     UPDATE=0
 fi
 
- 
+
 if [[ "$@" == *"--loud"* ]]; then
     LOUD=1
 fi
@@ -62,24 +62,24 @@ function loud() {
         echo "$@"
     fi
 }
-    
+
 function scan_directory() {
     # scan the directory in the ini file; if filename is not in our cache, analyze it and add
     # scan a directory passed in $1; if filename is not in our cache, analyze it AND ADD
     # write list of images to scan from later
 
-    # This can be the "base" directory or one added on the fly; after the scan 
+    # This can be the "base" directory or one added on the fly; after the scan
     # it doesn't matter.
     cd "${ImageDir}"
-    
-    if [ -f $(which fdfind) ];then 
+
+    if [ -f $(which fdfind) ];then
         imgfiles=$(fdfind -a -0 -e jpg -e jpeg -e png | xargs --null -I {} realpath {} )
     else
         imgfiles=$(find . -iname "*.jpg" -or -iname "*.png" -or -iname "*.jpeg" | xargs -I {} realpath {} )
     fi
     while read -r line; do
         exist=0
-        if [ -f "${line}" ];then 
+        if [ -f "${line}" ];then
             filename=$(basename "${line}")
             exist=$(grep -c "${filename}" "${CacheFile}")
             if [ -z $exist ];then
@@ -111,8 +111,8 @@ function scan_directory() {
             fi
         fi
     done < <(echo "${imgfiles}")
-}    
-    
+}
+
 function clean_cache() {
     # go through ${CacheFile} line by line, and omit the lines with files that no longer exist
     loud "## Checking filenames in cache"
@@ -141,18 +141,18 @@ function clean_cache() {
 
 function time_of_day() {
     # get geolocated coordinates
-    if [ -z "$COORDS" ]; then 
+    if [ -z "$COORDS" ]; then
         coords=$(curl -s https://whatismycountry.com/ | sed -e 's/picture/\n/g' -e 's/&#176;//g'  | grep "My coordinates" | awk -F '>' '{print $5}' | awk -F '<' ' {print $1}')
-    else 
+    else
         coords="${COORDS}"
     fi
-    
+
     # TODO: test to make sure that's not junk and we're connected to the internet
     lat=$(echo "${coords}" | awk -F ', ' '{ print $1 }')
-    long=$(echo "${coords}" | awk -F ', ' '{ print $2 }')    
+    long=$(echo "${coords}" | awk -F ', ' '{ print $2 }')
     sunrise=$(hdate -s -l "$lat" -L "$long" 2>/dev/null | grep "sunrise" | awk '{ print $2 }' | awk -F ':' '{ print $1 }')
     sunset=$(hdate -s -l "$lat" -L "$long" 2>/dev/null | grep "sunset" | awk '{ print $2 }' | awk -F ':' '{ print $1 }')
-    
+
     # doing all the math with bc to be consistent here
     midday=$(echo "($sunset-$sunrise)/2+$sunrise" | bc)
     midnight=$(echo "($sunset-$sunrise)/2+$sunset" | bc)
@@ -164,11 +164,11 @@ function time_of_day() {
     if ! [[ $midnight =~ $re ]] ; then
         midday=11
     fi
-    
+
     if [ $midnight -gt 23 ];then
         midnight=$(echo "$midnight-24" | bc)
     fi
-    
+
     # where is current hour in comparison to midday
     # You need the printf because otherwise the time_diff calculation is WRONG.
     currhour=$(printf "%02.f" $(date "+%-H"))
@@ -178,7 +178,7 @@ function time_of_day() {
     # THESE ARE THE BRIGHTNESS VALUES TO EDIT
     # 0 is MID-DAY
     case "${abs_time_diff}" in
-        0)  highval=65000    
+        0)  highval=65000
             lowval=54000
             ;;
         1)  highval=54000
@@ -224,19 +224,12 @@ function time_of_day() {
     # Use awk to parse our filelist to find something in the appropriate range
     outfile=""
     while : ; do
-        outfile=$(awk -F ',' -v highval="$highval" -v lowval="$lowval" '$3 <= highval && $3 >= lowval {print $1}' "${CacheFile}" | shuf | tail -1)
-        test=0
-        test=$(grep -c "$outfile" "${CurrImageName}")
-        if [ $test -ge 1 ];then
-            outfile=""
-        fi
+        # Exclude the previously used image by filtering it out before selecting
+        outfile=$(awk -F ',' -v highval="$highval" -v lowval="$lowval" '$3 <= highval && $3 >= lowval {print $1}' "${CacheFile}" | grep -vFf "${CurrImageName}" | shuf | tail -1)
         if [ -f "${outfile}" ]; then
             break
         fi
-        # check for its existence
-        [[ -f "${outfile}" ]] || break
-        # if nothing was found, expand lowval and highval before trying again.
-        # that way we'll eventually catch something.
+        # No valid file found in range; expand lowval and highval and try again.
         lowval=$((lowval-100))
         highval=$((highval+100))
         # ensure we haven't exceeded our maximum and minimum possible values
@@ -245,6 +238,12 @@ function time_of_day() {
         fi
         if [ $highval -ge 66500 ];then
             highval=66500
+        fi
+        # If the full range is exhausted and still nothing, relax the previous-image
+        # restriction as a last resort so we always return something.
+        if [ $lowval -eq 100 ] && [ $highval -eq 66500 ]; then
+            outfile=$(awk -F ',' '{print $1}' "${CacheFile}" | shuf | tail -1)
+            break
         fi
     done
     echo "${outfile}" > "${CurrImageName}"
@@ -301,25 +300,24 @@ fi
 if [ $UPDATE -eq 1 ];then
     clean_cache
     scan_directory
-fi    
+fi
 
 FileName=$(time_of_day)
 loud "The randomly-selected file is: ${FileName}"
-    
-# Normal output is *just* the selected filename, which can be fed into 
-# whatever you use to set your background, e.g. 
-# feh --bg-fill --no-xinerama $(./daywall.sh) 
+
+# Normal output is *just* the selected filename, which can be fed into
+# whatever you use to set your background, e.g.
+# feh --bg-fill --no-xinerama $(./daywall.sh)
 #
 if [ "${DARKEN}" = "1" ];then
-        DARKEN=$(mktemp)
-        convert "${FileName}" -fill black -colorize 75% "${DARKEN}"
+        darker_tmp=$(mktemp)
+        magick "${FileName}" -fill black -colorize 75% "${darker_tmp}"
         # because otherwise it ends up filling tmp with old versions!
-        cp -f "${DARKEN}" "$TMP/darker_bg.jpg"
-        rm "${DARKEN}"
-        # feh --bg-fill --no-xinerama "$TMP/darker_bg.jpg" 
+        cp -f "${darker_tmp}" "$TMP/darker_bg.jpg"
+        rm "${darker_tmp}"
+        # feh --bg-fill --no-xinerama "$TMP/darker_bg.jpg"
         echo "$TMP/darker_bg.jpg"
 else
     echo "${FileName}"
     # feh --bg-fill --no-xinerama "${FileName}"
 fi
-
