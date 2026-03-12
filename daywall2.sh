@@ -100,8 +100,8 @@ adjust_brightness() {
     # If brightness is within range, no adjustment is needed
     if (( current_brightness >= low_range && current_brightness <= high_range )); then
         loud "[info] Brightness is within the acceptable range, copying unchanged."
-        loud "[info] Running: magick \"${filename}\" \"${darker_filename}\""
-        timeout 30 magick "${filename}" "${darker_filename}"
+        loud "[info] Running: cp -f \"${filename}\" \"${darker_filename}\""
+        cp -f "${filename}" "${darker_filename}"
         loud "[info] Copied original image to: ${darker_filename}"
         return 0
     fi
@@ -110,97 +110,101 @@ adjust_brightness() {
 		# If brightness is too low, brighten the image
 		if (( current_brightness < low_range )); then
 			loud "[info] Brightness ${current_brightness} is below low threshold ${low_range}, brightening..."
-
 			factor=1.0
 			local bright_iters=0
+			# Iteratively brighten the image until it's within the range
+			while (( current_brightness < low_range )); do
+				# Increase factor by percentup percent each loop (e.g. 5 -> +5%)
+				factor=$(awk -v f="${factor}" -v step="${percentup}" 'BEGIN{print f*(1+step/100)}')
 
-				# Iteratively brighten the image until it's within the range
-				while (( current_brightness < low_range )); do
-					# Increase factor by percentup percent each loop (e.g. 5 -> +5%)
-					factor=$(awk -v f="${factor}" -v step="${percentup}" 'BEGIN{print f*(1+step/100)}')
+				loud "[info] Brighten iter ${bright_iters}: factor=${factor}, running: magick \"${filename}\" -colorspace RGB -evaluate Multiply ${factor} \"${darker_filename}\""
+				# ImageMagick 7
+				timeout 30 magick "${filename}" -colorspace RGB -evaluate Multiply "${factor}" "${darker_filename}"
+				if [ $? -ne 0 ]; then
+					loud "[warning] magick transform timed out or failed on brightening iter ${bright_iters}, stopping."
+					break
+				fi
 
-					loud "[info] Brighten iter ${bright_iters}: factor=${factor}, running: magick \"${filename}\" -colorspace RGB -evaluate Multiply ${factor} \"${darker_filename}\""
-					# ImageMagick 7
-					timeout 30 magick "${filename}" -colorspace RGB -evaluate Multiply "${factor}" "${darker_filename}"
-					if [ $? -ne 0 ]; then
-						loud "[warning] magick transform timed out or failed on brightening iter ${bright_iters}, stopping."
-						break
-					fi
+				# ImageMagick 6 equivalent:
+				#convert "${filename}" -colorspace RGB -evaluate Multiply "${factor}" "${darker_filename}"
 
-					# ImageMagick 6 equivalent:
-					#convert "${filename}" -colorspace RGB -evaluate Multiply "${factor}" "${darker_filename}"
+				loud "[info] Running: magick identify -colorspace Gray -format \"%[fx:quantumrange*mean]\" \"${darker_filename}\""
+				brightcolor=$(timeout 5 magick identify -colorspace Gray -format "%[fx:quantumrange*mean]" "${darker_filename}")
+				#brightcolor=$(timeout 5 convert "${darker_filename}" -colorspace Gray -format "%[fx:quantumrange*mean]" info:)
+				if [ -z "${brightcolor}" ]; then
+					loud "[warning] magick identify returned empty result on brightening iter ${bright_iters}, stopping."
+					break
+				fi
 
-					loud "[info] Running: magick identify -colorspace Gray -format \"%[fx:quantumrange*mean]\" \"${darker_filename}\""
-					brightcolor=$(timeout 5 magick identify -colorspace Gray -format "%[fx:quantumrange*mean]" "${darker_filename}")
-					#brightcolor=$(timeout 5 convert "${darker_filename}" -colorspace Gray -format "%[fx:quantumrange*mean]" info:)
-					if [ -z "${brightcolor}" ]; then
-						loud "[warning] magick identify returned empty result on brightening iter ${bright_iters}, stopping."
-						break
-					fi
+				current_brightness=$(echo "${brightcolor}" | awk '{print int($1)}')
+				loud "[info] Brightening iter ${bright_iters}: adjusted brightness=${current_brightness}, factor=${factor}"
 
-					current_brightness=$(echo "${brightcolor}" | awk '{print int($1)}')
-					loud "[info] Brightening iter ${bright_iters}: adjusted brightness=${current_brightness}, factor=${factor}"
-
-					# Safety: stop if factor is getting extreme (pixels are clipping, mean won't rise further)
-					if awk -v f="${factor}" 'BEGIN{exit (f > 5) ? 1 : 0}'; then : ; else
-						loud "[warning] Brightening factor ${factor} exceeded 5.0 (pixel clipping), stopping."
-						break
-					fi
-					(( bright_iters++ ))
-					if (( bright_iters >= 100 )); then
-						loud "[warning] Brightening loop safety limit of 100 iterations reached, stopping."
-						break
-					fi
-				done
+				# Safety: stop if factor is getting extreme (pixels are clipping, mean won't rise further)
+				if awk -v f="${factor}" 'BEGIN{exit (f > 5) ? 1 : 0}'; then : ; else
+					loud "[warning] Brightening factor ${factor} exceeded 5.0 (pixel clipping), stopping."
+					break
+				fi
+				(( bright_iters++ ))
+				if (( bright_iters >= 100 )); then
+					loud "[warning] Brightening loop safety limit of 100 iterations reached, stopping."
+					break
+				fi
+			done
 			loud "[info] Brightening complete: final brightness=${current_brightness}, factor=${factor}, iterations=${bright_iters}"
+		else
+			loud "[info] No brightening needed."
+			cp -f "${filename}" "${darker_filename}"
 		fi
 	else
-		loud "[info] --nobr set, skipping brightening."
+		loud "[info] --nobr set, skipping brightening, copying file." # because if it's somehow too bright AND too dark, something wrong
+		cp -f "${filename}" "${darker_filename}"
 	fi
 
-	if [ -z "${nodrk}" ]; then
+	if [ -z "${nodrk}" ]; then		
 		if (( current_brightness > high_range )); then
 			loud "[info] Brightness ${current_brightness} is above high threshold ${high_range}, darkening..."
-
 			factor=1.0
 			local dark_iters=0
+			while (( current_brightness > high_range )); do
+				# Reduce by a step, e.g. 5% per iteration
+				factor=$(awk -v f="${factor}" -v step="${percentup}" 'BEGIN{print f*(1-step/100)}')
 
-				while (( current_brightness > high_range )); do
-					# Reduce by a step, e.g. 5% per iteration
-					factor=$(awk -v f="${factor}" -v step="${percentup}" 'BEGIN{print f*(1-step/100)}')
+				loud "[info] Darken iter ${dark_iters}: factor=${factor}, running: magick \"${filename}\" -colorspace RGB -evaluate Multiply ${factor} \"${darker_filename}\""
+				timeout 30 magick "${filename}" -colorspace RGB -evaluate Multiply "${factor}" "${darker_filename}"
+				if [ $? -ne 0 ]; then
+					loud "[warning] magick transform timed out or failed on darkening iter ${dark_iters}, stopping."
+					break
+				fi
 
-					loud "[info] Darken iter ${dark_iters}: factor=${factor}, running: magick \"${filename}\" -colorspace RGB -evaluate Multiply ${factor} \"${darker_filename}\""
-					timeout 30 magick "${filename}" -colorspace RGB -evaluate Multiply "${factor}" "${darker_filename}"
-					if [ $? -ne 0 ]; then
-						loud "[warning] magick transform timed out or failed on darkening iter ${dark_iters}, stopping."
-						break
-					fi
+				loud "[info] Running: magick identify -colorspace Gray -format \"%[fx:quantumrange*mean]\" \"${darker_filename}\""
+				brightcolor=$(timeout 5 magick identify -colorspace Gray -format "%[fx:quantumrange*mean]" "${darker_filename}")
+				if [ -z "${brightcolor}" ]; then
+					loud "[warning] magick identify returned empty result on darkening iter ${dark_iters}, stopping."
+					break
+				fi
+				current_brightness=$(echo "${brightcolor}" | awk '{print int($1)}')
 
-					loud "[info] Running: magick identify -colorspace Gray -format \"%[fx:quantumrange*mean]\" \"${darker_filename}\""
-					brightcolor=$(timeout 5 magick identify -colorspace Gray -format "%[fx:quantumrange*mean]" "${darker_filename}")
-					if [ -z "${brightcolor}" ]; then
-						loud "[warning] magick identify returned empty result on darkening iter ${dark_iters}, stopping."
-						break
-					fi
-					current_brightness=$(echo "${brightcolor}" | awk '{print int($1)}')
+				loud "[info] Darkening iter ${dark_iters}: adjusted brightness=${current_brightness}, factor=${factor}"
 
-					loud "[info] Darkening iter ${dark_iters}: adjusted brightness=${current_brightness}, factor=${factor}"
-
-					# Safety: stop if factor is negligibly small (image is near black, won't darken further)
-					if awk -v f="${factor}" 'BEGIN{exit (f < 0.01) ? 1 : 0}'; then : ; else
-						loud "[warning] Darkening factor ${factor} dropped below 0.01 (near black), stopping."
-						break
-					fi
-					(( dark_iters++ ))
-					if (( dark_iters >= 100 )); then
-						loud "[warning] Darkening loop safety limit of 100 iterations reached, stopping."
-						break
-					fi
-				done
+				# Safety: stop if factor is negligibly small (image is near black, won't darken further)
+				if awk -v f="${factor}" 'BEGIN{exit (f < 0.01) ? 1 : 0}'; then : ; else
+					loud "[warning] Darkening factor ${factor} dropped below 0.01 (near black), stopping."
+					break
+				fi
+				(( dark_iters++ ))
+				if (( dark_iters >= 100 )); then
+					loud "[warning] Darkening loop safety limit of 100 iterations reached, stopping."
+					break
+				fi
+			done
 			loud "[info] Darkening complete: final brightness=${current_brightness}, factor=${factor}, iterations=${dark_iters}"
+		else
+			loud "[info] No darkening needed."
+			cp -f "${filename}" "${darker_filename}"
 		fi
 	else
 		loud "[info] --nodrk set, skipping darkening."
+		cp -f "${filename}" "${darker_filename}"
 	fi
 
     loud "[info] Adjusted image saved as: ${darker_filename}"
